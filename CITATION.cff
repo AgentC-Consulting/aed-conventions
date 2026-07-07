@@ -1,0 +1,31 @@
+cff-version: 1.2.0
+message: >-
+  If you apply or reference the AED conventions, please cite this repository.
+title: "AED Conventions — Agent-Enhanced Development: Code That Reads Like Statements"
+type: software
+authors:
+  - family-names: Tucker
+    given-names: Seth
+    email: st@agentc.consulting
+    affiliation: AgentC Consulting
+  - name: AgentC Consulting
+    website: "https://agentc.consulting"
+abstract: >-
+  Code conventions for codebases written, reviewed, and maintained by humans
+  and coding agents together. The guiding rule: prefer the form that reads
+  like a plain statement of intent; reach for shorthand only when it makes
+  the intent clearer, never just shorter. Includes rules with before/after
+  Crystal examples and a machine-checkable end-of-edit checklist.
+repository-code: "https://github.com/AgentC-Consulting/aed-conventions"
+url: "https://agentc.consulting"
+keywords:
+  - code-conventions
+  - agent-enhanced-development
+  - coding-agents
+  - readability
+  - crystal
+  - style-guide
+date-released: 2026-07-07
+version: 1.0.0-pre
+# NOTE: license field intentionally omitted until the license decision is
+# finalized — see LICENSE-PENDING.md. Add the SPDX identifier(s) here when it lands.

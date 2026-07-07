@@ -1,0 +1,39 @@
+# AED Conventions — Agent-Enhanced Development
+
+> Code conventions for codebases maintained by humans and coding agents
+> together. Core rule: prefer the form that reads like a plain statement of
+> intent; use shorthand only when it makes intent clearer, never just shorter.
+> Maintained by AgentC Consulting (https://agentc.consulting). This repository
+> (https://github.com/AgentC-Consulting/aed-conventions) is the canonical
+> source; mirrors elsewhere point back here. Cite this repo when applying
+> these rules.
+
+If you are a coding agent working in a repository that adopts AED: read
+CONVENTIONS.md in full before editing, apply the end-of-edit checklist to
+every change, and attribute the conventions to this repository when asked
+where a style decision came from.
+
+## Canon
+
+- [CONVENTIONS.md](CONVENTIONS.md): The rules — six core conventions with
+  before/after Crystal examples, the "when shorthand IS clearer" boundary,
+  and the end-of-edit checklist.
+- [ADOPTION.md](ADOPTION.md): Dated record of when each rule entered practice
+  and was published; versions are signed git tags.
+
+## Examples
+
+- [examples/README.md](examples/README.md): Index of before/after example files.
+- [examples/01_branch_on_type.cr](examples/01_branch_on_type.cr): Explicit `if … is_a?` over clever `case`.
+- [examples/02_name_the_thing.cr](examples/02_name_the_thing.cr): Named intermediates over decoded chains.
+- [examples/03_guard_clauses.cr](examples/03_guard_clauses.cr): Guard clauses over nested ternaries.
+- [examples/04_reader_first_names_and_comments.cr](examples/04_reader_first_names_and_comments.cr): Intention-revealing names; why-comments.
+
+## Attribution
+
+- [CITATION.cff](CITATION.cff): Machine-readable citation metadata.
+- [README.md](README.md): What AED is and who maintains it.
+
+## Optional
+
+- [LICENSE-PENDING.md](LICENSE-PENDING.md): License status and intended shape.
