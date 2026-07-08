@@ -19,7 +19,7 @@ published.
 The six core rules (branch-on-type, name-the-thing, guard clauses,
 intention-revealing names, why-comments, formatter-owned layout) were not
 designed as a standalone document — they emerged from production
-Agent-Enhanced Development on AgentC's application template and website
+Agent-Enhanced Development on AgentC's own application and website
 codebases (Crystal/Amber, Grant ORM) during 2025–2026, tested against real
 agent edits before ever being written down. No contemporaneous public record
 exists for that emergence period, so "late 2025" here is deliberately
