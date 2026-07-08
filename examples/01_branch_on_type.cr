@@ -31,10 +31,27 @@
 # ── AFTER (AED) ───────────────────────────────────────────────────────────────
 # An ordinary `if` reads like a sentence: "if the user is a regular user,
 # record a regular session; otherwise it is an admin session."
+#
+# Minimal stand-ins for the union type and session store this snippet was
+# excerpted from, so the file compiles standalone:
 
-if user.is_a?(Users::Regular)
-  session[:user_type] = "regular"
-  session[:session_version] = user.session_version
-else
-  session[:user_type] = "admin"
+module Users
+  class Regular
+    getter session_version : Int32
+
+    def initialize(@session_version : Int32)
+    end
+  end
+
+  class Admin
+  end
+end
+
+def record_session(user : Users::Regular | Users::Admin, session : Hash(Symbol, String | Int32)) : Nil
+  if user.is_a?(Users::Regular)
+    session[:user_type] = "regular"
+    session[:session_version] = user.session_version
+  else
+    session[:user_type] = "admin"
+  end
 end

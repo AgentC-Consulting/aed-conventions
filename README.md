@@ -46,5 +46,15 @@ discussions about the rules are welcome.
 
 ## License
 
-See [LICENSE-PENDING.md](LICENSE-PENDING.md) — the license decision is being
-finalized; the intended shape is documented there.
+This repository is dual-licensed:
+
+- **Prose and documentation** (this README, `CONVENTIONS.md`, `ADOPTION.md`,
+  `llms.txt`, and everything else that isn't code) is licensed under
+  [CC BY 4.0](LICENSE) — reuse and adapt freely, with credit to
+  [AgentC Consulting](https://agentc.consulting).
+- **Code examples** under [`examples/`](examples/) are licensed under
+  [MIT](LICENSE-EXAMPLES) — take them freely, with or without credit, and
+  paste them into any codebase.
+
+The split exists so the rules stay attributed while the code that
+demonstrates them can flow into any project with zero friction.

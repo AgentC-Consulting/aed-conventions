@@ -1,0 +1,4 @@
+# Local-only — never publish. See SIGNING_KEY_CUSTODY.md for what this is
+# and why it must not leave this machine.
+SIGNING_KEY_CUSTODY.md
+*.SENSITIVE

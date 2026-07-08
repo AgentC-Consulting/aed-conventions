@@ -14,6 +14,19 @@
 # ── AFTER (AED) ───────────────────────────────────────────────────────────────
 # Naming the intermediate turns the same logic into two plain statements:
 # "this is the state we expected; refuse unless it exists and matches."
+#
+# Minimal stand-ins for the session store and comparison helper this snippet
+# was excerpted from, so the file compiles standalone:
 
-expected_state = session["oauth_state"]?
-return unless expected_state && constant_time_equal?(expected_state, state)
+def constant_time_equal?(a : String, b : String) : Bool
+  return false if a.bytesize != b.bytesize
+
+  mismatch = 0
+  a.bytes.each_with_index { |byte, i| mismatch |= byte ^ b.bytes[i] }
+  mismatch == 0
+end
+
+def verify_oauth_callback(session : Hash(String, String), state : String) : Nil
+  expected_state = session["oauth_state"]?
+  return unless expected_state && constant_time_equal?(expected_state, state)
+end

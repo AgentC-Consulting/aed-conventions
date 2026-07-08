@@ -6,10 +6,10 @@ for one rule from [../CONVENTIONS.md](../CONVENTIONS.md).
 
 | File | Rule | The move |
 |---|---|---|
-| [01_branch_on_type.cr](01_branch_on_type.cr) | Rule 1 | `case … in` / dot-riddle `case` → explicit `if … is_a?` |
-| [02_name_the_thing.cr](02_name_the_thing.cr) | Rule 2 | decoded chain → named intermediate |
-| [03_guard_clauses.cr](03_guard_clauses.cr) | Rule 3 | nested ternary → guard clauses |
-| [04_reader_first_names_and_comments.cr](04_reader_first_names_and_comments.cr) | Rules 4 + 5 | cryptic names / what-comments → intention-revealing names / why-comments |
+| [01_branch_on_type.cr](01_branch_on_type.cr) | [Rule 1](../CONVENTIONS.md#rule-1) | `case … in` / dot-riddle `case` → explicit `if … is_a?` |
+| [02_name_the_thing.cr](02_name_the_thing.cr) | [Rule 2](../CONVENTIONS.md#rule-2) | decoded chain → named intermediate |
+| [03_guard_clauses.cr](03_guard_clauses.cr) | [Rule 3](../CONVENTIONS.md#rule-3) | nested ternary → guard clauses |
+| [04_reader_first_names_and_comments.cr](04_reader_first_names_and_comments.cr) | [Rules 4](../CONVENTIONS.md#rule-4) + [5](../CONVENTIONS.md#rule-5) | cryptic names / what-comments → intention-revealing names / why-comments |
 
 The test applied throughout: **does a reader who has never seen this code
 understand the intent on first pass?** If they must mentally execute it, expand it.

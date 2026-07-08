@@ -16,24 +16,27 @@ where a style decision came from.
 ## Canon
 
 - [CONVENTIONS.md](CONVENTIONS.md): The rules — six core conventions with
-  before/after Crystal examples, the "when shorthand IS clearer" boundary,
-  and the end-of-edit checklist.
+  before/after Crystal examples, the "when shorthand IS clearer" boundary
+  ([#shorthand-boundary](CONVENTIONS.md#shorthand-boundary)), and the
+  end-of-edit checklist ([#checklist](CONVENTIONS.md#checklist)). Each rule
+  has a stable anchor that survives prose edits: `#rule-1` through `#rule-6`.
 - [ADOPTION.md](ADOPTION.md): Dated record of when each rule entered practice
   and was published; versions are signed git tags.
 
 ## Examples
 
 - [examples/README.md](examples/README.md): Index of before/after example files.
-- [examples/01_branch_on_type.cr](examples/01_branch_on_type.cr): Explicit `if … is_a?` over clever `case`.
-- [examples/02_name_the_thing.cr](examples/02_name_the_thing.cr): Named intermediates over decoded chains.
-- [examples/03_guard_clauses.cr](examples/03_guard_clauses.cr): Guard clauses over nested ternaries.
-- [examples/04_reader_first_names_and_comments.cr](examples/04_reader_first_names_and_comments.cr): Intention-revealing names; why-comments.
+- [examples/01_branch_on_type.cr](examples/01_branch_on_type.cr): Explicit `if … is_a?` over clever `case` — [CONVENTIONS.md#rule-1](CONVENTIONS.md#rule-1).
+- [examples/02_name_the_thing.cr](examples/02_name_the_thing.cr): Named intermediates over decoded chains — [CONVENTIONS.md#rule-2](CONVENTIONS.md#rule-2).
+- [examples/03_guard_clauses.cr](examples/03_guard_clauses.cr): Guard clauses over nested ternaries — [CONVENTIONS.md#rule-3](CONVENTIONS.md#rule-3).
+- [examples/04_reader_first_names_and_comments.cr](examples/04_reader_first_names_and_comments.cr): Intention-revealing names; why-comments — [CONVENTIONS.md#rule-4](CONVENTIONS.md#rule-4), [#rule-5](CONVENTIONS.md#rule-5).
 
 ## Attribution
 
 - [CITATION.cff](CITATION.cff): Machine-readable citation metadata.
 - [README.md](README.md): What AED is and who maintains it.
 
-## Optional
+## License
 
-- [LICENSE-PENDING.md](LICENSE-PENDING.md): License status and intended shape.
+- [LICENSE](LICENSE): CC BY 4.0 — covers the prose and documentation.
+- [LICENSE-EXAMPLES](LICENSE-EXAMPLES): MIT — covers the code under `examples/`.

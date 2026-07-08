@@ -27,5 +27,10 @@ keywords:
   - style-guide
 date-released: 2026-07-07
 version: 1.0.0-pre
-# NOTE: license field intentionally omitted until the license decision is
-# finalized — see LICENSE-PENDING.md. Add the SPDX identifier(s) here when it lands.
+license:
+  - CC-BY-4.0
+  - MIT
+license-url: "https://github.com/AgentC-Consulting/aed-conventions/blob/main/README.md#license"
+# NOTE: dual license — CC BY 4.0 covers the prose/documentation (LICENSE),
+# MIT covers the code examples under examples/ (LICENSE-EXAMPLES). See the
+# README's License section for the split.

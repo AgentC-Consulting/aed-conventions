@@ -1,0 +1,42 @@
+AED Conventions — Prose License (CC BY 4.0)
+
+Copyright (c) 2026 AgentC Consulting
+
+This applies to the prose and documentation in this repository — README.md,
+CONVENTIONS.md, ADOPTION.md, llms.txt, drafts/, CITATION.cff's descriptive
+text, and all other non-code content — licensed under the Creative Commons
+Attribution 4.0 International License (CC BY 4.0).
+
+Code examples under examples/ are licensed separately under MIT — see
+LICENSE-EXAMPLES. This dual-license structure is explained in README.md.
+
+To view the full legal text of this license, visit:
+https://creativecommons.org/licenses/by/4.0/legalcode
+
+Human-readable summary (this summary is not a substitute for the license):
+
+You are free to:
+
+  - Share — copy and redistribute the material in any medium or format
+  - Adapt — remix, transform, and build upon the material
+
+  for any purpose, even commercially.
+
+Under the following terms:
+
+  - Attribution — You must give appropriate credit to AgentC Consulting
+    (https://agentc.consulting), provide a link to this license, and
+    indicate if changes were made. You may do so in any reasonable manner,
+    but not in any way that suggests AgentC Consulting endorses you or
+    your use.
+  - No additional restrictions — You may not apply legal terms or
+    technological measures that legally restrict others from doing
+    anything the license permits.
+
+No warranties are given. The license may not give you all of the
+permissions necessary for your intended use. For example, other rights
+such as publicity, privacy, or moral rights may limit how you use the
+material.
+
+Full legal code: https://creativecommons.org/licenses/by/4.0/legalcode
+Deed (plain-language summary): https://creativecommons.org/licenses/by/4.0/

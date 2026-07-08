@@ -13,20 +13,34 @@ published.
 
 ---
 
-## 2026-07-07 — Repository prepared (pre-publication)
+## 2026-07-07 — Six core rules written down and licensed (pre-publication)
 
-- The six core rules (branch-on-type, name-the-thing, guard clauses,
-  intention-revealing names, why-comments, formatter-owned layout) adapted
-  from AgentC's internal AED conventions skill into `CONVENTIONS.md`, with all
-  rules and examples preserved.
-- Four before/after example files added under `examples/`.
-- License decision pending — see `LICENSE-PENDING.md`.
-- Control-flow rules (loops, guards ordering, rescues, fibers, macros) drafted
-  internally; under review for a future tagged minor version.
+**Practiced since ~late 2025, first published 2026-07-07.** *(reconstructed)*
+The six core rules (branch-on-type, name-the-thing, guard clauses,
+intention-revealing names, why-comments, formatter-owned layout) were not
+designed as a standalone document — they emerged from production
+Agent-Enhanced Development on AgentC's application template and website
+codebases (Crystal/Amber, Grant ORM) during 2025–2026, tested against real
+agent edits before ever being written down. No contemporaneous public record
+exists for that emergence period, so "late 2025" here is deliberately
+approximate rather than implying more precision than the evidence supports;
+the contemporaneous private evidence exists and whether/when to publish it
+is a separate, later decision.
 
-## Earlier — practice before publication *(reconstructed)*
+On 2026-07-07 the rules were written down in full for the first time as
+`CONVENTIONS.md` in this repository, with four before/after example files
+added under `examples/`, and licensed:
 
-- The six core rules emerged from production agent-enhanced development on
-  AgentC's application template and website codebases (Crystal/Amber, Grant
-  ORM) during 2025–2026, where every rule was tested against real agent edits
-  before being written down.
+- **Prose and documentation** — [CC BY 4.0](LICENSE).
+- **Code examples** (`examples/`) — [MIT](LICENSE-EXAMPLES).
+
+Control-flow rules (loops, guard ordering, rescues, fibers, macros) were
+drafted internally during the same period and are held back from this
+publication; they are targeted for a signed `v1.1.0` after their own review
+(see `CONVENTIONS.md` → Status and versioning).
+
+*Note on "published": this entry records the rules being committed to this
+repository's local history. The repository going live on GitHub, with a
+signed `v1.0.0` tag and mirrors on GitLab and Codeberg, is a separate, later
+step — a following entry will record that date and the resulting URLs once
+it happens.*

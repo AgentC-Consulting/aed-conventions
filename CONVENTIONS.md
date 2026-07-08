@@ -27,6 +27,7 @@ are about reading, not syntax.
 
 ## The rules (with Crystal examples)
 
+<a id="rule-1"></a>
 ### 1. Branch on type with an explicit `if … is_a?`, not a clever `case`
 
 `case … in` demands *exhaustive* matching, and in codebases using the Grant ORM
@@ -56,6 +57,7 @@ when .is_a?(Users::Regular) then ...
 end
 ```
 
+<a id="rule-2"></a>
 ### 2. Name the thing; don't make the reader decode a chain
 
 ```crystal
@@ -67,6 +69,7 @@ return unless expected_state && constant_time_equal?(expected_state, state)
 return unless session["oauth_state"]?.try { |s| constant_time_equal?(s, state) }
 ```
 
+<a id="rule-3"></a>
 ### 3. Prefer explicit guard clauses to nested ternaries / one-liners
 
 ```crystal
@@ -79,12 +82,14 @@ self
 password_digest.empty? ? nil : (Crypto::Bcrypt::Password.new(password_digest).verify(password) ? self : nil)
 ```
 
+<a id="rule-4"></a>
 ### 4. Use full, intention-revealing names
 
 Methods and locals are sentences-in-miniature: `establish_session`,
 `invalidate_all_sessions`, `find_or_create_from_oauth`, `expected_state`. Avoid
 `do_it`, `tmp`, `x`, `res2`. A good name removes the need for a comment.
 
+<a id="rule-5"></a>
 ### 5. Say *why* in a comment, let the code say *what*
 
 Comments earn their place by explaining intent, security rationale, or a
@@ -94,6 +99,7 @@ prevents; an encrypted column carries a comment stating what the encryption
 protects and why. If a comment could be deleted with no loss because the code
 already says it, delete it.
 
+<a id="rule-6"></a>
 ### 6. One statement per line; let the formatter own the layout
 
 Run `crystal tool format` (or your language's canonical formatter) as part of
@@ -102,6 +108,7 @@ same shape.
 
 ---
 
+<a id="shorthand-boundary"></a>
 ## When shorthand IS the clearer form
 
 AED is "clarity first," not "verbose always." Idioms that are *more* readable are
@@ -112,6 +119,7 @@ they have to mentally execute it, expand it.
 
 ---
 
+<a id="checklist"></a>
 ## Checklist before you finish an edit
 
 - [ ] Type branches use explicit `if … is_a?` (not `case … in` against Grant types).
