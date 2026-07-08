@@ -51,8 +51,14 @@ it happens.*
 
 The repository went live on GitHub as the canonical home of the AED
 conventions, and `v1.0.0` was signed with the AgentC Consulting org key
-(see the public key attached to the repository; verify with `gpg --verify`)
-and pushed with `--follow-tags`.
+and pushed with `--follow-tags`. The org public key is published in this
+repo as [`agentc-signing-pubkey.asc`](agentc-signing-pubkey.asc); see
+[README.md § Verifying signed tags](README.md#verifying-signed-tags) for the
+verify command. Note: because that key is not (yet) registered to any
+GitHub account, GitHub's own UI shows the tag/commits as "Unverified" —
+this is a GitHub account-linking limitation, not a problem with the
+signature itself; `gpg --verify` against the published key is the
+authoritative check.
 
 **Live URLs:**
 

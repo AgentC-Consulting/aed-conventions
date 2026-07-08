@@ -44,6 +44,18 @@ with coding agents doing the majority of the writing, under conventions that
 keep every line reviewable. This repo is the public canon; issues and
 discussions about the rules are welcome.
 
+## Verifying signed tags
+
+Every published version is a signed git tag (`git tag -s`), signed with the
+AgentC Consulting org identity (`AgentC Consulting <st@agentc.consulting>`).
+The public key is [`agentc-signing-pubkey.asc`](agentc-signing-pubkey.asc) in
+this repo. To verify a tag:
+
+```
+gpg --import agentc-signing-pubkey.asc
+git tag -v v1.0.0
+```
+
 ## License
 
 This repository is dual-licensed:
