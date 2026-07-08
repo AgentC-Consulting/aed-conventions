@@ -56,6 +56,12 @@ gpg --import agentc-signing-pubkey.asc
 git tag -v v1.0.0
 ```
 
+The GPG signature is the authoritative provenance and carries the org
+identity above; the tag object's `tagger` field instead shows the
+maintainer's personal git identity, since that reflects who ran the `git
+tag` command locally — this is expected and does not affect what the
+signature verifies.
+
 ## License
 
 This repository is dual-licensed:

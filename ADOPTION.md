@@ -58,7 +58,13 @@ verify command. Note: because that key is not (yet) registered to any
 GitHub account, GitHub's own UI shows the tag/commits as "Unverified" —
 this is a GitHub account-linking limitation, not a problem with the
 signature itself; `gpg --verify` against the published key is the
-authoritative check.
+authoritative check. The GPG signature is the authoritative provenance and
+carries the org identity above; the tag object's `tagger` field instead
+shows the maintainer's personal git identity, since that reflects who ran
+the `git tag` command locally — this is expected. Also note: the tag
+object's timestamp is 2026-07-08 UTC (18:51:51 PDT on 2026-07-07, the date
+this entry is dated to), since the `-0700` offset carries it past midnight
+UTC.
 
 **Live URLs:**
 
