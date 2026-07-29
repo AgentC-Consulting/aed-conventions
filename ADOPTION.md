@@ -61,10 +61,18 @@ is still under-specified. Chapter 02 is the authority. Reconciling the
 example is tracked for v1.1.0 final.
 
 **Why a release candidate:** the CF thresholds and that naming conflict are
-genuinely unsettled, and this republication changes what the repository *is*
-rather than adding to it. Publishing as `-rc.1` puts the material where it can
-be fetched and argued with, without asserting that the edges are final. Whether
-the final tag is `v1.1.0` or `v2.0.0` is deliberately left open.
+genuinely unsettled. Publishing as `-rc.1` puts the material where it can be
+fetched and argued with, without asserting that the edges are final.
+
+**Version decision (2026-07-29): this stays on the v1 line.** The question was
+raised at publication — an expansion this large arguably justifies an honest
+`v2.0.0`, since it changes what the repository *is* rather than adding to it.
+Settled by the maintainer the same day: no. It is a big expansion, but it is
+still part of the same frontier foundation this project set out to establish,
+so it belongs on the v1 line. `v2.0.0` is reserved for the **next generation of
+improvements** — thinking that supersedes this foundation rather than filling
+it in. The final tag on this work will therefore be `v1.1.0`. See
+[Versioning](README.md#versioning).
 
 **Published surfaces:**
 

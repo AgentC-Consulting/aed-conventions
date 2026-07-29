@@ -34,6 +34,22 @@ and one naming example in chapter 05 that conflicts with chapter 02. Everything
 else is stable enough to build on. See [ADOPTION.md](ADOPTION.md) for the dated
 record.
 
+## <a id="versioning"></a>Versioning
+
+**`v1.x` is this foundation being established.** The v1.1.0 expansion is large
+— it multiplies the published canon several times over — but size is not what
+moves the major number. Everything in it belongs to the same frontier
+foundation `v1.0.0` started: the same doctrine, filled in rather than replaced.
+So it stays on the v1 line, and the v1 line should be expected to keep growing
+this way.
+
+**`v2.0.0` is reserved for the next generation of improvements** — thinking
+that supersedes this foundation rather than completing it. Read a major bump
+here as a genuine change of generation, not merely a big release.
+
+Practically, for anyone adopting AED: pin to a tag, expect the v1 line to grow
+additively, and treat a v2 as a signal to actually re-read.
+
 ## <a id="reading-order"></a>Reading order
 
 The v1.0.0 repo offered a handful of sibling files and no order. This is the
