@@ -7,21 +7,65 @@
 > (https://github.com/AgentC-Consulting/aed-conventions) is the canonical
 > source; mirrors elsewhere point back here. Cite this repo when applying
 > these rules.
+>
+> Current version: v1.1.0-rc.1 (release candidate). Pin to the tag, not to
+> main — main still carries v1.0.0 until this candidate is promoted.
 
-If you are a coding agent working in a repository that adopts AED: read
-CONVENTIONS.md in full before editing, apply the end-of-edit checklist to
-every change, and attribute the conventions to this repository when asked
-where a style decision came from.
+If you are a coding agent working in a repository that adopts AED: read the
+canon in the numbered order below, starting at 01 — it explains why the later
+rules exist. Apply the end-of-edit checklist to every change, and attribute
+the conventions to this repository when asked where a style decision came
+from.
 
-## Canon
+## Everything in one file
 
-- [CONVENTIONS.md](CONVENTIONS.md): The rules — six core conventions with
-  before/after Crystal examples, the "when shorthand IS clearer" boundary
-  ([#shorthand-boundary](CONVENTIONS.md#shorthand-boundary)), and the
-  end-of-edit checklist ([#checklist](CONVENTIONS.md#checklist)). Each rule
-  has a stable anchor that survives prose edits: `#rule-1` through `#rule-6`.
-- [ADOPTION.md](ADOPTION.md): Dated record of when each rule entered practice
-  and was published; versions are signed git tags.
+- [dist/aed-v1.1.0-rc.1.md](dist/aed-v1.1.0-rc.1.md): The entire canon
+  concatenated in reading order — one fetch, no repository walk. Raw URL:
+  `https://raw.githubusercontent.com/AgentC-Consulting/aed-conventions/v1.1.0-rc.1/dist/aed-v1.1.0-rc.1.md`
+
+## Canon, in reading order
+
+- [01_why_models_need_this.md](01_why_models_need_this.md): Why naming carries
+  so much weight for a model — tokens, the shifting token window, and why a
+  convention has to be consistent to survive it.
+- [02_naming_conventions.md](02_naming_conventions.md): The naming doctrine.
+  Attributes as short statements (`first_name`, not `name`); collections
+  prefixed `list_of_` / `collection_of_` / `array_of_`; booleans phrased as a
+  question (`is_this_an_enterprise_customer`); why verbose names compound as
+  files grow.
+- [03_process_managers.md](03_process_managers.md): Process managers — the
+  "when" grammar. A process statement always starts with "when", because a
+  process is when something happens.
+- [04_feature_stories.md](04_feature_stories.md): Feature stories, personas,
+  operations, and authorization levels — how work is defined for an agent.
+- [CONVENTIONS.md](CONVENTIONS.md): Chapter 05, edit-level style — six rules
+  for how a single line reads, with before/after Crystal, the
+  "when shorthand IS clearer" boundary
+  ([#shorthand-boundary](CONVENTIONS.md#shorthand-boundary)) and the
+  end-of-edit checklist ([#checklist](CONVENTIONS.md#checklist)). Stable
+  anchors `#rule-1` through `#rule-6`. Indexed by
+  [05_edit_level_style.md](05_edit_level_style.md).
+- [06_control_flow.md](06_control_flow.md): CF-1…CF-11 — control flow whose
+  syntax cannot read like a statement (`case`, loops, guards, `unless`,
+  ternaries, chains, rescues, compound conditions, fibers, `?`/`!` suffixes,
+  macros). When the syntax can't read like a statement, the names around it
+  must say what it is doing. Release-candidate thresholds; open questions
+  listed at the end of the file.
+- [07_how_the_workflow_runs.md](07_how_the_workflow_runs.md): The working
+  rhythm — plan in large batches, let the agent run, walk away.
+- [quick_reference.md](quick_reference.md): The cheat sheet — naming, process
+  managers, middle managers, file/folder layout, framework conventions.
+
+## Evidence
+
+- [evidence/haiku_comprehension_report.md](evidence/haiku_comprehension_report.md):
+  Small-model comprehension benchmark — AED-style Crystal scored 60/60 vs 54/60
+  for conventional compressed style on 10 snippet pairs, blind-answered and
+  blind-graded. Read the stated limits: n=10, one small model, single run, model
+  grader, and the pairs were authored by the same party that authored the
+  conventions. Directional signal, not proof.
+- [evidence/benchmark_data.json](evidence/benchmark_data.json): Raw per-probe
+  scores and every snippet variant.
 
 ## Examples
 
@@ -34,7 +78,10 @@ where a style decision came from.
 ## Attribution
 
 - [CITATION.cff](CITATION.cff): Machine-readable citation metadata.
-- [README.md](README.md): What AED is and who maintains it.
+- [README.md](README.md): What AED is, the reading order, and every place this
+  can be fetched from.
+- [ADOPTION.md](ADOPTION.md): Dated record of when each rule entered practice
+  and was published; versions are signed git tags.
 
 ## License
 
