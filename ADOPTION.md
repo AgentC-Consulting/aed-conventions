@@ -13,6 +13,44 @@ published.
 
 ---
 
+## 2026-08-01 — Claude Code plugin packaging added
+
+**Practiced same day.** The AED conventions are now installable as a Claude
+Code plugin, packaged on the `v1.1` line alongside the canon rather than as
+a separate line of doctrine:
+
+- `.claude-plugin/marketplace.json` and
+  `plugins/aed/.claude-plugin/plugin.json` — a marketplace shipping one
+  plugin, `aed`. Install with
+  `/plugin marketplace add AgentC-Consulting/aed-conventions` then
+  `/plugin install aed@aed-conventions`.
+- Three skills — `aed:naming`, `aed:planning`, `aed:process-managers` —
+  that carry the naming doctrine, planning-stage discipline, and
+  process-manager "when" grammar from chapters 02–04 into an agent's
+  planning and edits.
+- Three commands — `/aed:check` (lint names on demand), `/aed:scaffold`
+  (build a process manager from a When-statement), and `/aed:adopt` (write
+  an "AED conventions" section into a project's `CLAUDE.md`).
+- `plugins/aed/scripts/aed_lint.rb`, an advisory naming linter for Ruby,
+  Crystal, and Elixir, wired into a `PostToolUse` hook that runs after
+  every edit.
+
+**Enforcement is advisory only, by design** — the same posture as the
+written canon. The linter always exits 0, the hook never blocks an edit,
+and every finding is a suggestion for an agent or human to accept or
+reject, never a gate.
+
+**Plugin versioning is separate from the canon's.** The plugin ships as
+`0.1.0` and versions independently of the `v1.x` doctrine tags; a plugin
+release carries no claim about the state of the canon, and a canon release
+carries no claim about the plugin.
+
+`scripts/validate_plugin.sh` is the executable rubric for this packaging —
+manifest schema, hook wiring, skill/command frontmatter, the linter's own
+test suite, and a hook smoke test.
+
+---
+
 ## 2026-07-29 — v1.1.0-rc.1: the original canon published, control flow added
 
 **Practiced since 2024; first published here 2026-07-29.**

@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "ruby \"${CLAUDE_PLUGIN_ROOT}/scripts/aed_lint.rb\" --hook",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
+  }
+}
