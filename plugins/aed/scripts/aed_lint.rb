@@ -123,6 +123,10 @@ module AedLint
 
     def vague_or_single_letter?(candidate_name)
       bare_name = candidate_name.to_s.sub(/[?!]\z/, "")
+      # A leading underscore is the idiomatic "intentionally unused / discarded"
+      # marker in Crystal, Ruby, and Elixir — `_ = keep_alive` and `_ignored`
+      # are deliberate statements, not vague names.
+      return false if bare_name.start_with?("_")
       VAGUE_NAMES.include?(bare_name.downcase) || bare_name.length == 1
     end
 

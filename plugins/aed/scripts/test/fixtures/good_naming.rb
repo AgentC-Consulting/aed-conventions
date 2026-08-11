@@ -31,5 +31,10 @@ module GoodNaming
       end
       list_of_subscriptions_to_reactivate.each { |subscription_record| subscription_record.reactivate! }
     end
+
+    private def keep_worker_reference_alive(worker_task)
+      _ = worker_task
+      _ignored_result = worker_task
+    end
   end
 end
