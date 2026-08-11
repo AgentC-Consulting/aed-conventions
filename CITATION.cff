@@ -14,8 +14,11 @@ abstract: >-
   Code conventions for codebases written, reviewed, and maintained by humans
   and coding agents together. The guiding rule: prefer the form that reads
   like a plain statement of intent; reach for shorthand only when it makes
-  the intent clearer, never just shorter. Includes rules with before/after
-  Crystal examples and a machine-checkable end-of-edit checklist.
+  the intent clearer, never just shorter. Covers the token-window rationale,
+  naming doctrine, process managers, feature stories, edit-level style, and
+  control flow (CF-1 through CF-11), with before/after Crystal examples, a
+  machine-checkable end-of-edit checklist, and a small-model comprehension
+  benchmark.
 repository-code: "https://github.com/AgentC-Consulting/aed-conventions"
 url: "https://agentc.consulting"
 keywords:
@@ -25,8 +28,8 @@ keywords:
   - readability
   - crystal
   - style-guide
-date-released: 2026-07-07
-version: 1.0.0-pre
+date-released: 2026-07-29
+version: 1.1.0-rc.1
 license:
   - CC-BY-4.0
   - MIT

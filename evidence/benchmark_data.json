@@ -1,0 +1,306 @@
+{
+  "benchmark": "AED vs conventional Crystal — small-model comprehension",
+  "date": "2026-07-07",
+  "hypothesis": "AED-style Crystal ('reads like statements', per the premium template's aed-conventions skill) lets smaller models reason about and understand code intent better than conventional compressed style.",
+  "method": {
+    "pairs": 10,
+    "probes_per_variant": 3,
+    "probe_types": [
+      "intent",
+      "modification",
+      "defect"
+    ],
+    "probe_descriptions": {
+      "intent": "Explain what the code does and why (business intent, not line-by-line).",
+      "modification": "Describe how to make a specified behavior change correctly.",
+      "defect": "A subtle behavioral question / planted-defect-style probe about an edge case."
+    },
+    "answering_model": "Claude Haiku (answered blind: never told which style variant it was reading)",
+    "grading": "Graded blind by a model grader that never saw which style produced the answer. 0 = wrong/missed, 1 = partially correct, 2 = fully correct. Max 6 per variant per pair.",
+    "semantic_equivalence": "Each pair's two variants were verified behaviorally identical by a Crystal differential-test harness (scratchpad aed_bench/build_harness.py + tests.cr) that runs both variants against shared checks and diffs outputs.",
+    "runs": "Single run per probe (no repeats).",
+    "note": "Haiku's raw answer transcripts and the grader's rationales were not persisted; this file carries the full source of both variants per pair plus the graded scores, which is sufficient to re-run the probes."
+  },
+  "aggregate": {
+    "aed_total": 60,
+    "conventional_total": 54,
+    "max_per_variant": 60
+  },
+  "per_probe_type_totals": {
+    "aed": {
+      "intent": 20,
+      "modification": 20,
+      "defect": 20
+    },
+    "conventional": {
+      "intent": 18,
+      "modification": 20,
+      "defect": 16
+    },
+    "max_per_cell": 20
+  },
+  "pairs": [
+    {
+      "id": "p1-auth-mfa-routing",
+      "topic": "auth/session logic — post-password MFA routing and pending-challenge TTL",
+      "aed_source": "module Auth\n  # Routes a user who has just passed the password check. The password is only\n  # the FIRST factor: an MFA-enrolled regular user must verify a second factor\n  # before a session is established. Admin accounts have no MFA flag here.\n  module PostPasswordRouter\n    MFA_PENDING_TTL_SECONDS = 300\n\n    def self.next_step(user : Users::Regular | Users::Admin | Nil) : Symbol\n      return :reject_login if user.nil?\n      return :begin_mfa_challenge if second_factor_required?(user)\n\n      :complete_login\n    end\n\n    # Only regular users can enroll in MFA in this template.\n    def self.second_factor_required?(user : Users::Regular | Users::Admin) : Bool\n      if user.is_a?(Users::Regular)\n        user.mfa_enabled\n      else\n        false\n      end\n    end\n\n    # A pending second factor is honored only inside the TTL window; a stale\n    # challenge sends the user back to the password step. This bounds the\n    # window an attacker has to guess codes.\n    def self.mfa_challenge_still_valid?(pending_started_at : Int64?, now : Int64) : Bool\n      return false if pending_started_at.nil?\n\n      seconds_pending = now - pending_started_at\n      seconds_pending <= MFA_PENDING_TTL_SECONDS\n    end\n  end\nend\n",
+      "conventional_source": "module Auth\n  module PostPasswordRouter\n    MFA_PENDING_TTL_SECONDS = 300\n\n    def self.next_step(user : Users::Regular | Users::Admin | Nil) : Symbol\n      return :reject_login unless user\n      user.is_a?(Users::Regular) && user.mfa_enabled ? :begin_mfa_challenge : :complete_login\n    end\n\n    def self.second_factor_required?(user : Users::Regular | Users::Admin) : Bool\n      user.is_a?(Users::Regular) ? user.mfa_enabled : false\n    end\n\n    def self.mfa_challenge_still_valid?(pending_started_at : Int64?, now : Int64) : Bool\n      pending_started_at ? (now - pending_started_at) <= MFA_PENDING_TTL_SECONDS : false\n    end\n  end\nend\n"
+    },
+    {
+      "id": "p2-lead-scoring",
+      "topic": "lead scoring — email-domain classification plus message-effort bonus",
+      "aed_source": "class LeadScorer\n  BUSINESS_DOMAIN_BONUS     =  25\n  SUBSTANTIAL_MESSAGE_LEN   = 120\n  SUBSTANTIAL_MESSAGE_BONUS =  10\n\n  FREE_PROVIDER_DOMAINS = %w[gmail.com yahoo.com outlook.com hotmail.com icloud.com proton.me]\n  DISPOSABLE_DOMAINS    = %w[mailinator.com guerrillamail.com yopmail.com temp-mail.org]\n\n  # Triage score: business senders who write substantively float to the top.\n  def self.score(email : String, message : String) : Int32\n    domain_class = classify_domain(extract_domain(email))\n\n    score = 0\n    score += BUSINESS_DOMAIN_BONUS if domain_class == \"business\"\n    score -= BUSINESS_DOMAIN_BONUS if domain_class == \"suspicious\"\n    score += SUBSTANTIAL_MESSAGE_BONUS if substantial_message?(message)\n    score\n  end\n\n  def self.classify_domain(domain : String) : String\n    return \"unknown\" if domain.empty?\n    return \"suspicious\" if DISPOSABLE_DOMAINS.includes?(domain)\n    return \"free_provider\" if FREE_PROVIDER_DOMAINS.includes?(domain)\n    return \"business\" if plausible_custom_domain?(domain)\n    \"unknown\"\n  end\n\n  # A custom domain must contain a dot that is not at either end.\n  def self.plausible_custom_domain?(domain : String) : Bool\n    domain.includes?('.') && !domain.starts_with?('.') && !domain.ends_with?('.')\n  end\n\n  # A few sentences of detail is a real effort signal vs. a one-liner.\n  def self.substantial_message?(message : String) : Bool\n    message.strip.size >= SUBSTANTIAL_MESSAGE_LEN\n  end\n\n  def self.extract_domain(address : String) : String\n    normalized = address.strip.downcase\n    at_index = normalized.rindex('@')\n    return \"\" unless at_index\n    normalized[(at_index + 1)..].strip\n  end\nend\n",
+      "conventional_source": "class LeadScorer\n  BUSINESS_DOMAIN_BONUS     =  25\n  SUBSTANTIAL_MESSAGE_LEN   = 120\n  SUBSTANTIAL_MESSAGE_BONUS =  10\n\n  FREE_PROVIDER_DOMAINS = %w[gmail.com yahoo.com outlook.com hotmail.com icloud.com proton.me]\n  DISPOSABLE_DOMAINS    = %w[mailinator.com guerrillamail.com yopmail.com temp-mail.org]\n\n  def self.score(email : String, message : String) : Int32\n    dc = classify_domain(extract_domain(email))\n    base = dc == \"business\" ? BUSINESS_DOMAIN_BONUS : dc == \"suspicious\" ? -BUSINESS_DOMAIN_BONUS : 0\n    base + (message.strip.size >= SUBSTANTIAL_MESSAGE_LEN ? SUBSTANTIAL_MESSAGE_BONUS : 0)\n  end\n\n  def self.classify_domain(domain : String) : String\n    case\n    when domain.empty?                                                                 then \"unknown\"\n    when DISPOSABLE_DOMAINS.includes?(domain)                                          then \"suspicious\"\n    when FREE_PROVIDER_DOMAINS.includes?(domain)                                       then \"free_provider\"\n    when domain.includes?('.') && !domain.starts_with?('.') && !domain.ends_with?('.') then \"business\"\n    else                                                                                    \"unknown\"\n    end\n  end\n\n  def self.extract_domain(address : String) : String\n    a = address.strip.downcase\n    (i = a.rindex('@')) ? a[(i + 1)..].strip : \"\"\n  end\nend\n"
+    },
+    {
+      "id": "p3-document-workflow",
+      "topic": "state transitions — document review workflow state machine",
+      "aed_source": "module Documents\n  enum Status\n    Draft\n    InReview\n    Approved\n    Rejected\n    Archived\n  end\n\n  # Review flow for client documents: a document moves strictly\n  # draft -> in_review -> (approved | rejected). A rejected document returns\n  # to draft for revision, only an approved document can be archived, and\n  # archived is terminal, immutable history.\n  module Workflow\n    def self.transition_allowed?(from : Status, to : Status) : Bool\n      allowed_destinations(from).includes?(to)\n    end\n\n    def self.allowed_destinations(from : Status) : Array(Status)\n      if from.draft?\n        [Status::InReview]\n      elsif from.in_review?\n        [Status::Approved, Status::Rejected]\n      elsif from.rejected?\n        [Status::Draft]\n      elsif from.approved?\n        [Status::Archived]\n      else\n        [] of Status\n      end\n    end\n\n    def self.terminal?(status : Status) : Bool\n      allowed_destinations(status).empty?\n    end\n  end\nend\n",
+      "conventional_source": "module Documents\n  enum Status\n    Draft\n    InReview\n    Approved\n    Rejected\n    Archived\n  end\n\n  module Workflow\n    def self.transition_allowed?(from : Status, to : Status) : Bool\n      allowed_destinations(from).includes?(to)\n    end\n\n    def self.allowed_destinations(from : Status) : Array(Status)\n      case from\n      in .draft?     then [Status::InReview]\n      in .in_review? then [Status::Approved, Status::Rejected]\n      in .rejected?  then [Status::Draft]\n      in .approved?  then [Status::Archived]\n      in .archived?  then [] of Status\n      end\n    end\n\n    def self.terminal?(status : Status) : Bool\n      allowed_destinations(status).empty?\n    end\n  end\nend\n"
+    },
+    {
+      "id": "p4-storage-safe-delete",
+      "topic": "file/storage handling — path-safe delete with metadata sidecar",
+      "aed_source": "module Storage\n  # Deletes an object and its metadata sidecar from the local disk store.\n  # Refuses any key that could reach outside the storage root.\n  class LocalObjectRemover\n    getter root : String\n\n    def initialize(@root : String)\n    end\n\n    def delete(key : String) : Bool\n      return false unless safe_key?(key)\n\n      path = File.join(root, key)\n      return false unless File.exists?(path)\n\n      File.delete(path)\n      remove_metadata_sidecar(path)\n      true\n    rescue error\n      Log.error { \"LocalObjectRemover.delete error: #{error.message}\" }\n      false\n    end\n\n    # A key may not be empty, may not be absolute, and may not contain a\n    # \"..\" segment — any of those could escape the storage root.\n    def safe_key?(key : String) : Bool\n      return false if key.empty?\n      return false if key.starts_with?('/')\n      return false if key.split('/').includes?(\"..\")\n      true\n    end\n\n    # Content-type metadata lives in a \"<path>.meta\" sidecar written by put.\n    private def remove_metadata_sidecar(path : String)\n      meta_path = \"#{path}.meta\"\n      File.delete(meta_path) if File.exists?(meta_path)\n    end\n  end\nend\n",
+      "conventional_source": "module Storage\n  class LocalObjectRemover\n    getter root : String\n\n    def initialize(@root : String)\n    end\n\n    def delete(key : String) : Bool\n      return false unless safe_key?(key)\n      path = File.join(root, key)\n      return false unless File.exists?(path)\n      File.delete(path)\n      File.delete(\"#{path}.meta\") if File.exists?(\"#{path}.meta\")\n      true\n    rescue e\n      Log.error { \"LocalObjectRemover.delete error: #{e.message}\" }\n      false\n    end\n\n    def safe_key?(key : String) : Bool\n      !key.empty? && !key.starts_with?('/') && !key.split('/').includes?(\"..\")\n    end\n  end\nend\n"
+    },
+    {
+      "id": "p5-rate-limiter",
+      "topic": "rate limiting — sliding-window per-IP submission ceiling",
+      "aed_source": "# Sliding-window, in-memory rate limit for the contact form: an IP may\n# submit at most MAX_SUBMISSIONS_PER_WINDOW times per rolling hour.\n# Requests without a usable IP are never limited — we fail open on purpose.\nclass SubmissionRateLimiter\n  MAX_SUBMISSIONS_PER_WINDOW = 3\n  WINDOW_SECONDS             = 60 * 60\n\n  def initialize\n    @submission_times_by_ip = Hash(String, Array(Int64)).new\n    @lock = Mutex.new\n  end\n\n  # Records this attempt, then reports whether the IP has now gone over the\n  # ceiling. Every attempt is recorded, even ones that end up limited.\n  def over_limit?(ip : String?, now : Int64) : Bool\n    return false if ip.nil? || ip.empty?\n\n    attempts_in_window = record_and_count(ip, now)\n    attempts_in_window > MAX_SUBMISSIONS_PER_WINDOW\n  end\n\n  private def record_and_count(ip : String, now : Int64) : Int32\n    window_start = now - WINDOW_SECONDS\n\n    @lock.synchronize do\n      recent_times = @submission_times_by_ip[ip]? || Array(Int64).new\n      recent_times.reject! { |time| time < window_start }\n      recent_times << now\n      @submission_times_by_ip[ip] = recent_times\n      recent_times.size\n    end\n  end\nend\n",
+      "conventional_source": "class SubmissionRateLimiter\n  MAX_SUBMISSIONS_PER_WINDOW = 3\n  WINDOW_SECONDS             = 60 * 60\n\n  def initialize\n    @submission_times_by_ip = Hash(String, Array(Int64)).new\n    @lock = Mutex.new\n  end\n\n  def over_limit?(ip : String?, now : Int64) : Bool\n    return false unless ip && !ip.empty?\n    window_start = now - WINDOW_SECONDS\n    @lock.synchronize do\n      times = (@submission_times_by_ip[ip] ||= [] of Int64)\n      times.reject! { |t| t < window_start }\n      times << now\n      times.size > MAX_SUBMISSIONS_PER_WINDOW\n    end\n  end\nend\n"
+    },
+    {
+      "id": "p6-retry-backoff",
+      "topic": "background scheduling — exponential retry backoff with dead-letter cutoff",
+      "aed_source": "module Jobs\n  # Retry policy for failed background jobs: exponential backoff with a cap,\n  # then dead-letter after the final attempt so a poison job cannot retry forever.\n  module RetryPolicy\n    MAX_ATTEMPTS       =   8\n    BASE_DELAY_SECONDS =  30\n    MAX_DELAY_SECONDS  = 600\n\n    # attempts_made counts failures so far, including the one that just happened.\n    def self.next_step(attempts_made : Int32) : {Symbol, Int32}\n      return {:dead_letter, 0} if retries_exhausted?(attempts_made)\n\n      {:retry, delay_before_next_attempt(attempts_made)}\n    end\n\n    def self.retries_exhausted?(attempts_made : Int32) : Bool\n      attempts_made >= MAX_ATTEMPTS\n    end\n\n    # 30s, 60s, 120s ... doubling per failure, never above the ten-minute cap.\n    def self.delay_before_next_attempt(attempts_made : Int32) : Int32\n      uncapped_delay = BASE_DELAY_SECONDS * (2 ** (attempts_made - 1))\n      if uncapped_delay > MAX_DELAY_SECONDS\n        MAX_DELAY_SECONDS\n      else\n        uncapped_delay\n      end\n    end\n  end\nend\n",
+      "conventional_source": "module Jobs\n  module RetryPolicy\n    MAX_ATTEMPTS       =   8\n    BASE_DELAY_SECONDS =  30\n    MAX_DELAY_SECONDS  = 600\n\n    def self.next_step(attempts_made : Int32) : {Symbol, Int32}\n      attempts_made >= MAX_ATTEMPTS ? {:dead_letter, 0} : {:retry, delay_before_next_attempt(attempts_made)}\n    end\n\n    def self.retries_exhausted?(attempts_made : Int32) : Bool\n      attempts_made >= MAX_ATTEMPTS\n    end\n\n    def self.delay_before_next_attempt(attempts_made : Int32) : Int32\n      Math.min(BASE_DELAY_SECONDS * (2 ** (attempts_made - 1)), MAX_DELAY_SECONDS)\n    end\n  end\nend\n"
+    },
+    {
+      "id": "p7-inquiry-validation",
+      "topic": "validation — collect-all-errors form validation for inquiry submissions",
+      "aed_source": "# Field-level validation for the /stroll inquiry form. Returns every error\n# at once so the visitor can fix the whole form in one pass.\nclass InquiryValidator\n  MIN_MESSAGE_LENGTH =   20\n  MAX_MESSAGE_LENGTH = 5000\n\n  getter name : String\n  getter email : String\n  getter message : String\n\n  def initialize(@name : String, @email : String, @message : String)\n  end\n\n  def errors : Array(String)\n    found = [] of String\n    found << \"Name is required\" if name_is_blank?\n    found << \"Email address does not look valid\" unless email_looks_deliverable?\n    found << \"Message must be at least #{MIN_MESSAGE_LENGTH} characters\" if message_too_short?\n    found << \"Message must be under #{MAX_MESSAGE_LENGTH} characters\" if message_too_long?\n    found\n  end\n\n  def valid? : Bool\n    errors.empty?\n  end\n\n  private def name_is_blank? : Bool\n    name.strip.empty?\n  end\n\n  # Deliberately loose: just a \"local@domain.tld\" shape. Real deliverability\n  # is judged later by the MX lookup in lead scoring.\n  private def email_looks_deliverable? : Bool\n    email.matches?(/\\A[^@\\s]+@[^@\\s]+\\.[^@\\s]+\\z/)\n  end\n\n  private def message_too_short? : Bool\n    message.strip.size < MIN_MESSAGE_LENGTH\n  end\n\n  private def message_too_long? : Bool\n    message.strip.size > MAX_MESSAGE_LENGTH\n  end\nend\n",
+      "conventional_source": "class InquiryValidator\n  MIN_MESSAGE_LENGTH =   20\n  MAX_MESSAGE_LENGTH = 5000\n  EMAIL_FORMAT       = /\\A[^@\\s]+@[^@\\s]+\\.[^@\\s]+\\z/\n\n  getter name : String\n  getter email : String\n  getter message : String\n\n  def initialize(@name : String, @email : String, @message : String)\n  end\n\n  def errors : Array(String)\n    e = [] of String\n    e << \"Name is required\" if name.strip.empty?\n    e << \"Email address does not look valid\" unless email.matches?(EMAIL_FORMAT)\n    m = message.strip.size\n    e << \"Message must be at least #{MIN_MESSAGE_LENGTH} characters\" if m < MIN_MESSAGE_LENGTH\n    e << \"Message must be under #{MAX_MESSAGE_LENGTH} characters\" if m > MAX_MESSAGE_LENGTH\n    e\n  end\n\n  def valid? : Bool\n    errors.empty?\n  end\nend\n"
+    },
+    {
+      "id": "p8-rbac-document-policy",
+      "topic": "RBAC checks — admin/owner bypass plus org-role gated document actions",
+      "aed_source": "module Authorization\n  # Access rules for client documents. Admins bypass all checks; a document's\n  # owner has full control; organization members act by role — editors may\n  # read and update, viewers may only read. Everyone else is denied.\n  class DocumentPolicy\n    getter user_id : Int64\n    getter user_is_admin : Bool\n    getter org_role : String?\n\n    def initialize(@user_id : Int64, @user_is_admin : Bool, @org_role : String?)\n    end\n\n    def can?(action : Symbol, owner_id : Int64) : Bool\n      return true if user_is_admin\n      return true if owns_document?(owner_id)\n      return can_act_as_editor?(action) if org_role == \"editor\"\n      return action == :read if org_role == \"viewer\"\n\n      false\n    end\n\n    private def owns_document?(owner_id : Int64) : Bool\n      user_id == owner_id\n    end\n\n    # Editors may change content but never destroy it.\n    private def can_act_as_editor?(action : Symbol) : Bool\n      action == :read || action == :update\n    end\n  end\nend\n",
+      "conventional_source": "module Authorization\n  class DocumentPolicy\n    getter user_id : Int64\n    getter user_is_admin : Bool\n    getter org_role : String?\n\n    def initialize(@user_id : Int64, @user_is_admin : Bool, @org_role : String?)\n    end\n\n    def can?(action : Symbol, owner_id : Int64) : Bool\n      return true if user_is_admin || user_id == owner_id\n      case org_role\n      when \"editor\" then action == :read || action == :update\n      when \"viewer\" then action == :read\n      else               false\n      end\n    end\n  end\nend\n"
+    },
+    {
+      "id": "p9-lead-badge-rendering",
+      "topic": "ECR-adjacent rendering — score-tier badge HTML with escaping",
+      "aed_source": "module Views\n  # Renders the score badge shown beside each inquiry in the /stroll inbox.\n  # Tiers make the score glanceable so hot leads float to the top of triage.\n  module LeadBadge\n    HOT_THRESHOLD  = 40\n    WARM_THRESHOLD = 15\n\n    def self.tier(score : Int32) : String\n      return \"hot\" if score >= HOT_THRESHOLD\n      return \"warm\" if score >= WARM_THRESHOLD\n      return \"cold\" if score >= 0\n      \"junk\"\n    end\n\n    # The domain comes from user input, so it is HTML-escaped before it is\n    # interpolated into markup.\n    def self.badge_html(score : Int32, email_domain : String) : String\n      badge_tier = tier(score)\n      escaped_domain = HTML.escape(email_domain)\n\n      String.build do |html|\n        html << %(<span class=\"lead-badge lead-badge--#{badge_tier}\" data-score=\"#{score}\">)\n        html << badge_tier.upcase\n        html << \" · \"\n        html << escaped_domain\n        html << \"</span>\"\n      end\n    end\n  end\nend\n",
+      "conventional_source": "module Views\n  module LeadBadge\n    HOT_THRESHOLD  = 40\n    WARM_THRESHOLD = 15\n\n    def self.tier(score : Int32) : String\n      score >= HOT_THRESHOLD ? \"hot\" : score >= WARM_THRESHOLD ? \"warm\" : score >= 0 ? \"cold\" : \"junk\"\n    end\n\n    def self.badge_html(score : Int32, email_domain : String) : String\n      t = tier(score)\n      %(<span class=\"lead-badge lead-badge--#{t}\" data-score=\"#{score}\">#{t.upcase} · #{HTML.escape(email_domain)}</span>)\n    end\n  end\nend\n"
+    },
+    {
+      "id": "p10-mail-queue-triage",
+      "topic": "queue/status flow — outbound-mail worker triage with stale-lock reclaim",
+      "aed_source": "module Mailer\n  # Decides what the queue worker should do with one outbound email row.\n  # Pending mail goes out once its scheduled time arrives. A \"processing\" row\n  # whose lock is older than the stale threshold belonged to a crashed worker\n  # and is reclaimed; anything already sent or failed is left alone.\n  module QueueTriage\n    STALE_LOCK_SECONDS = 15 * 60\n\n    def self.decision(status : String, scheduled_at : Int64, locked_at : Int64?, now : Int64) : Symbol\n      if status == \"pending\"\n        if due_for_delivery?(scheduled_at, now)\n          return :deliver\n        else\n          return :not_due_yet\n        end\n      end\n\n      if status == \"processing\"\n        return :reclaim if lock_gone_stale?(locked_at, now)\n        return :leave_alone\n      end\n\n      :leave_alone\n    end\n\n    def self.due_for_delivery?(scheduled_at : Int64, now : Int64) : Bool\n      scheduled_at <= now\n    end\n\n    # A worker that dies mid-send leaves the row locked; after 15 minutes we\n    # assume the worker is gone and give the row back to the queue.\n    def self.lock_gone_stale?(locked_at : Int64?, now : Int64) : Bool\n      return false if locked_at.nil?\n\n      (now - locked_at) > STALE_LOCK_SECONDS\n    end\n  end\nend\n",
+      "conventional_source": "module Mailer\n  module QueueTriage\n    STALE_LOCK_SECONDS = 15 * 60\n\n    def self.decision(status : String, scheduled_at : Int64, locked_at : Int64?, now : Int64) : Symbol\n      case status\n      when \"pending\"    then scheduled_at <= now ? :deliver : :not_due_yet\n      when \"processing\" then locked_at && (now - locked_at) > STALE_LOCK_SECONDS ? :reclaim : :leave_alone\n      else                   :leave_alone\n      end\n    end\n\n    def self.due_for_delivery?(scheduled_at : Int64, now : Int64) : Bool\n      scheduled_at <= now\n    end\n\n    def self.lock_gone_stale?(locked_at : Int64?, now : Int64) : Bool\n      locked_at ? (now - locked_at) > STALE_LOCK_SECONDS : false\n    end\n  end\nend\n"
+    }
+  ],
+  "scored_runs": [
+    {
+      "pair": "p1-auth-mfa-routing",
+      "variant": "aed",
+      "scores_by_probe": {
+        "intent": 2,
+        "modification": 2,
+        "defect": 2
+      },
+      "pair_total": 6
+    },
+    {
+      "pair": "p1-auth-mfa-routing",
+      "variant": "conventional",
+      "scores_by_probe": {
+        "intent": 2,
+        "modification": 2,
+        "defect": 2
+      },
+      "pair_total": 6
+    },
+    {
+      "pair": "p2-lead-scoring",
+      "variant": "aed",
+      "scores_by_probe": {
+        "intent": 2,
+        "modification": 2,
+        "defect": 2
+      },
+      "pair_total": 6
+    },
+    {
+      "pair": "p2-lead-scoring",
+      "variant": "conventional",
+      "scores_by_probe": {
+        "intent": 2,
+        "modification": 2,
+        "defect": 2
+      },
+      "pair_total": 6
+    },
+    {
+      "pair": "p3-document-workflow",
+      "variant": "aed",
+      "scores_by_probe": {
+        "intent": 2,
+        "modification": 2,
+        "defect": 2
+      },
+      "pair_total": 6
+    },
+    {
+      "pair": "p3-document-workflow",
+      "variant": "conventional",
+      "scores_by_probe": {
+        "intent": 1,
+        "modification": 2,
+        "defect": 0
+      },
+      "pair_total": 3
+    },
+    {
+      "pair": "p4-storage-safe-delete",
+      "variant": "aed",
+      "scores_by_probe": {
+        "intent": 2,
+        "modification": 2,
+        "defect": 2
+      },
+      "pair_total": 6
+    },
+    {
+      "pair": "p4-storage-safe-delete",
+      "variant": "conventional",
+      "scores_by_probe": {
+        "intent": 2,
+        "modification": 2,
+        "defect": 2
+      },
+      "pair_total": 6
+    },
+    {
+      "pair": "p5-rate-limiter",
+      "variant": "aed",
+      "scores_by_probe": {
+        "intent": 2,
+        "modification": 2,
+        "defect": 2
+      },
+      "pair_total": 6
+    },
+    {
+      "pair": "p5-rate-limiter",
+      "variant": "conventional",
+      "scores_by_probe": {
+        "intent": 2,
+        "modification": 2,
+        "defect": 2
+      },
+      "pair_total": 6
+    },
+    {
+      "pair": "p6-retry-backoff",
+      "variant": "aed",
+      "scores_by_probe": {
+        "intent": 2,
+        "modification": 2,
+        "defect": 2
+      },
+      "pair_total": 6
+    },
+    {
+      "pair": "p6-retry-backoff",
+      "variant": "conventional",
+      "scores_by_probe": {
+        "intent": 2,
+        "modification": 2,
+        "defect": 2
+      },
+      "pair_total": 6
+    },
+    {
+      "pair": "p7-inquiry-validation",
+      "variant": "aed",
+      "scores_by_probe": {
+        "intent": 2,
+        "modification": 2,
+        "defect": 2
+      },
+      "pair_total": 6
+    },
+    {
+      "pair": "p7-inquiry-validation",
+      "variant": "conventional",
+      "scores_by_probe": {
+        "intent": 1,
+        "modification": 2,
+        "defect": 2
+      },
+      "pair_total": 5
+    },
+    {
+      "pair": "p8-rbac-document-policy",
+      "variant": "aed",
+      "scores_by_probe": {
+        "intent": 2,
+        "modification": 2,
+        "defect": 2
+      },
+      "pair_total": 6
+    },
+    {
+      "pair": "p8-rbac-document-policy",
+      "variant": "conventional",
+      "scores_by_probe": {
+        "intent": 2,
+        "modification": 2,
+        "defect": 2
+      },
+      "pair_total": 6
+    },
+    {
+      "pair": "p9-lead-badge-rendering",
+      "variant": "aed",
+      "scores_by_probe": {
+        "intent": 2,
+        "modification": 2,
+        "defect": 2
+      },
+      "pair_total": 6
+    },
+    {
+      "pair": "p9-lead-badge-rendering",
+      "variant": "conventional",
+      "scores_by_probe": {
+        "intent": 2,
+        "modification": 2,
+        "defect": 2
+      },
+      "pair_total": 6
+    },
+    {
+      "pair": "p10-mail-queue-triage",
+      "variant": "aed",
+      "scores_by_probe": {
+        "intent": 2,
+        "modification": 2,
+        "defect": 2
+      },
+      "pair_total": 6
+    },
+    {
+      "pair": "p10-mail-queue-triage",
+      "variant": "conventional",
+      "scores_by_probe": {
+        "intent": 2,
+        "modification": 2,
+        "defect": 0
+      },
+      "pair_total": 4
+    }
+  ]
+}

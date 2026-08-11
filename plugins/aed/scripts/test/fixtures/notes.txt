@@ -1,0 +1,2 @@
+These are plain notes, not source code.
+The linter's hook should skip this file based on its extension.

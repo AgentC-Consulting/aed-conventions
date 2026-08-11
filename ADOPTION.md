@@ -13,6 +13,121 @@ published.
 
 ---
 
+## 2026-08-01 — Claude Code plugin packaging added
+
+**Practiced same day.** The AED conventions are now installable as a Claude
+Code plugin, packaged on the `v1.1` line alongside the canon rather than as
+a separate line of doctrine:
+
+- `.claude-plugin/marketplace.json` and
+  `plugins/aed/.claude-plugin/plugin.json` — a marketplace shipping one
+  plugin, `aed`. Install with
+  `/plugin marketplace add AgentC-Consulting/aed-conventions` then
+  `/plugin install aed@aed-conventions`.
+- Three skills — `aed:naming`, `aed:planning`, `aed:process-managers` —
+  that carry the naming doctrine, planning-stage discipline, and
+  process-manager "when" grammar from chapters 02–04 into an agent's
+  planning and edits.
+- Three commands — `/aed:check` (lint names on demand), `/aed:scaffold`
+  (build a process manager from a When-statement), and `/aed:adopt` (write
+  an "AED conventions" section into a project's `CLAUDE.md`).
+- `plugins/aed/scripts/aed_lint.rb`, an advisory naming linter for Ruby,
+  Crystal, and Elixir, wired into a `PostToolUse` hook that runs after
+  every edit.
+
+**Enforcement is advisory only, by design** — the same posture as the
+written canon. The linter always exits 0, the hook never blocks an edit,
+and every finding is a suggestion for an agent or human to accept or
+reject, never a gate.
+
+**Plugin versioning is separate from the canon's.** The plugin ships as
+`0.1.0` and versions independently of the `v1.x` doctrine tags; a plugin
+release carries no claim about the state of the canon, and a canon release
+carries no claim about the plugin.
+
+`scripts/validate_plugin.sh` is the executable rubric for this packaging —
+manifest schema, hook wiring, skill/command frontmatter, the linter's own
+test suite, and a hook smoke test.
+
+---
+
+## 2026-07-29 — v1.1.0-rc.1: the original canon published, control flow added
+
+**Practiced since 2024; first published here 2026-07-29.**
+
+v1.0.0 published six edit-level style rules and nothing else. Readers — and
+the maintainer — noted that the repository did not contain the doctrine AED
+is actually named for: the token-window rationale, the verbose-naming
+conventions, process managers, and feature stories all existed as private
+notes dating to 2024-06-03 and had never been published. `v1.1.0-rc.1`
+publishes them.
+
+**Restored, verbatim from the author's originals** (authored 2024-06-03,
+`process_manager_conventions.md` last revised 2025-11-24). These are published
+as written, including the author's own work-in-progress markers and one
+unfinished section marked `TBD`; nothing was rewritten or smoothed:
+
+- `01_why_models_need_this.md` — the token-window explanation (excerpt of 02,
+  lifted to the front of the reading order)
+- `02_naming_conventions.md` — `list_of_` naming, boolean-as-question naming,
+  attributes as short statements, and the compounding argument
+- `03_process_managers.md` — the "when" grammar
+- `04_feature_stories.md` — personas, operations, authorization levels
+- `07_how_the_workflow_runs.md` — the batch-plan-and-walk-away rhythm
+- `quick_reference.md` — the cheat sheet
+
+**Added:**
+
+- `06_control_flow.md` — CF-1 through CF-11, developed 2026-07-07 against a
+  census of two live production codebases. Ships as a **release candidate**:
+  the rules hold, the exact thresholds are still open, and the open questions
+  are listed at the end of the file.
+- `evidence/` — the small-model comprehension benchmark (AED 60/60 vs
+  conventional 54/60, Claude Haiku, blind-answered and blind-graded) and its
+  raw per-probe data, with the method's limits stated up front. Run
+  2026-07-07.
+
+**Kept, repositioned:** the six v1.0.0 rules remain at `CONVENTIONS.md` with
+their `#rule-1` … `#rule-6` anchors untouched, indexed as chapter 05 of the
+canon. The anchors were published in v1.0.0 and are cited externally;
+renumbering them into a new filename would have broken those links to no
+reader's benefit.
+
+**Known conflict, tracked not hidden:** `CONVENTIONS.md` rule 4 offers
+`expected_state` as an improved name; by `02_naming_conventions.md` that name
+is still under-specified. Chapter 02 is the authority. Reconciling the
+example is tracked for v1.1.0 final.
+
+**Why a release candidate:** the CF thresholds and that naming conflict are
+genuinely unsettled. Publishing as `-rc.1` puts the material where it can be
+fetched and argued with, without asserting that the edges are final.
+
+**Version decision (2026-07-29): this stays on the v1 line.** The question was
+raised at publication — an expansion this large arguably justifies an honest
+`v2.0.0`, since it changes what the repository *is* rather than adding to it.
+Settled by the maintainer the same day: no. It is a big expansion, but it is
+still part of the same frontier foundation this project set out to establish,
+so it belongs on the v1 line. `v2.0.0` is reserved for the **next generation of
+improvements** — thinking that supersedes this foundation rather than filling
+it in. The final tag on this work will therefore be `v1.1.0`. See
+[Versioning](README.md#versioning).
+
+**Published surfaces:**
+
+- Signed tag `v1.1.0-rc.1`:
+  <https://github.com/AgentC-Consulting/aed-conventions/releases/tag/v1.1.0-rc.1>
+- Single-file bundle `dist/aed-v1.1.0-rc.1.md` — the whole canon in reading
+  order, fetchable in one request, generated by `scripts/build_bundle.sh`
+- Hugging Face dataset (org-owned):
+  <https://huggingface.co/datasets/agentc-consulting/aed-conventions>
+
+The tag lives on the `release/v1.1.0-rc.1` branch. `main` remains at `v1.0.0`
+until this candidate is promoted, so anyone fetching the stable line is
+unaffected.
+
+---
+
+
 ## 2026-07-07 — Six core rules written down and licensed (pre-publication)
 
 **Practiced since ~late 2025, first published 2026-07-07.** *(reconstructed)*
@@ -88,8 +203,11 @@ UTC.
   command. Until the mirrors exist, GitHub is the sole host — the
   "independent corroboration" property described in the plan does not yet
   hold and should not be assumed.
-- **Hugging Face org card** — blocked on the same missing `AgentC-Consulting`
-  HF organization noted above.
+- **Hugging Face org card** — *unblocked 2026-07-29*: the
+  `agentc-consulting` organization now exists on Hugging Face, and the
+  v1.1.0-rc.1 canon is published there as an org-owned dataset. The v0
+  examples dataset still sits in the personal `crimson-knight` namespace;
+  moving or duplicating it under the org is follow-up work.
 - **dev.to posts A and B** — drafts exist in `drafts/` and await the owner's
   voice review before either is scheduled; nothing has been published to
   dev.to.
