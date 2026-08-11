@@ -224,6 +224,29 @@ else
   skip V8 "claude CLI not found on PATH"
 fi
 
+# ---------------------------------------------------------------------------
+# V9: plugin.json must not re-declare auto-loaded component paths. Claude Code
+# loads skills/, commands/, and hooks/hooks.json automatically; an explicit
+# manifest reference to hooks/hooks.json is treated as a DUPLICATE hooks file
+# and the whole plugin fails to load (found by the first real install,
+# 2026-08-11 — validate_plugin.sh and `claude plugin validate` both missed it).
+# ---------------------------------------------------------------------------
+V9_OUT=$(ruby -rjson -e '
+  manifest = JSON.parse(File.read("plugins/aed/.claude-plugin/plugin.json"))
+  offending_keys = ["hooks", "skills", "commands", "agents"].select { |key| manifest.key?(key) }
+  if offending_keys.empty?
+    puts "no auto-loaded component paths re-declared"
+  else
+    puts "plugin.json re-declares auto-loaded component key(s): #{offending_keys.join(", ")}"
+    exit 1
+  end
+' 2>&1)
+if [ $? -eq 0 ]; then
+  pass V9 "$V9_OUT"
+else
+  fail V9 "$V9_OUT"
+fi
+
 echo "----"
 if [ $FAILURES -eq 0 ]; then
   echo "validate_plugin.sh: all checks passed"
