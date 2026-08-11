@@ -22,4 +22,9 @@ defmodule AedFixtures.GoodNaming do
   defp lock_one_customer_record(customer_record_to_lock) do
     %{customer_record_to_lock | has_this_account_been_locked: true}
   end
+
+  defp keep_worker_reference_alive(_worker_task) do
+    _ = :discarded
+    :ok
+  end
 end

@@ -39,6 +39,11 @@ module GoodNaming
       customer_with_an_expired_payment_method
     end
 
+    private def keep_worker_reference_alive(worker_task : Task)
+      _ = worker_task
+      _ignored_result = worker_task
+    end
+
     private def mark_customer_accounts_as_delinquent_and_prevent_further_use
       # Your business logic goes here
     end
