@@ -116,6 +116,44 @@ git clone --branch v1.1.0-rc.1 --depth 1 https://github.com/AgentC-Consulting/ae
 Pin to the tag, not to `main`. `main` still carries `v1.0.0` until this
 candidate is promoted.
 
+## Install the AED plugin (Claude Code)
+
+The naming doctrine, process managers, and feature-story rules above are also
+packaged as a Claude Code plugin: skills that apply AED while planning and
+editing, `/aed:check` / `/aed:scaffold` / `/aed:adopt` commands, an advisory
+naming linter for Ruby, Crystal, and Elixir, and an edit-time hook that
+surfaces naming issues without ever blocking an edit.
+
+In-app:
+
+```
+/plugin marketplace add AgentC-Consulting/aed-conventions
+/plugin install aed@aed-conventions
+```
+
+Or paste this into any Claude Code session and let Claude drive the install:
+
+```
+Install the AED conventions plugin:
+1. Run: claude plugin marketplace add AgentC-Consulting/aed-conventions
+2. Run: claude plugin install aed@aed-conventions
+3. Confirm the aed:naming, aed:planning, and aed:process-managers skills are available,
+   then give me one example of a boolean attribute name that passes AED naming.
+```
+
+**What you get:** the `aed:naming`, `aed:planning`, and
+`aed:process-managers` skills; the `/aed:check`, `/aed:scaffold`, and
+`/aed:adopt` slash commands; and a `PostToolUse` hook that runs the naming
+linter after edits to Ruby, Crystal, or Elixir files — advisory only, it
+never blocks.
+
+**Requirements:** Claude Code with plugin support, and `ruby` on PATH for the
+linter and the hook (macOS and most Linux distros ship it already). Without
+`ruby` the skills still work; the hook silently no-ops.
+
+See [`plugins/aed/README.md`](plugins/aed/README.md) for the full command and
+linter-CLI reference.
+
 ## If you're a coding agent
 
 Read the spine in order — 01 first, because it explains why the rest exists.

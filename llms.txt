@@ -75,6 +75,29 @@ from.
 - [examples/03_guard_clauses.cr](examples/03_guard_clauses.cr): Guard clauses over nested ternaries — [CONVENTIONS.md#rule-3](CONVENTIONS.md#rule-3).
 - [examples/04_reader_first_names_and_comments.cr](examples/04_reader_first_names_and_comments.cr): Intention-revealing names; why-comments — [CONVENTIONS.md#rule-4](CONVENTIONS.md#rule-4), [#rule-5](CONVENTIONS.md#rule-5).
 
+## Claude Code plugin
+
+- [.claude-plugin/marketplace.json](.claude-plugin/marketplace.json): Plugin
+  marketplace manifest — the `aed-conventions` marketplace shipping the
+  `aed` plugin. Install with
+  `/plugin marketplace add AgentC-Consulting/aed-conventions`.
+- [plugins/aed/.claude-plugin/plugin.json](plugins/aed/.claude-plugin/plugin.json):
+  Plugin manifest for `aed` — the `aed:naming`, `aed:planning`, and
+  `aed:process-managers` skills, the `/aed:check` / `/aed:scaffold` /
+  `/aed:adopt` commands, and the edit-time naming hook.
+- [plugins/aed/README.md](plugins/aed/README.md): Self-contained plugin
+  README — install steps, a command/skill/hook table, and the linter CLI
+  reference.
+- [plugins/aed/scripts/aed_lint.rb](plugins/aed/scripts/aed_lint.rb): The
+  advisory naming linter for Ruby, Crystal, and Elixir — file/directory lint
+  mode, `check-name` mode for a single candidate name, and `--hook` mode for
+  the `PostToolUse` hook. `--hook` mode always exits 0 and never blocks;
+  `--strict` exits 1 on warnings and `check-name` exits 1 when a name needs
+  renaming.
+- [scripts/validate_plugin.sh](scripts/validate_plugin.sh): Executable
+  rubric that checks both manifests, the hook wiring, skill/command
+  frontmatter, the linter test suite, and a hook smoke test.
+
 ## Attribution
 
 - [CITATION.cff](CITATION.cff): Machine-readable citation metadata.
