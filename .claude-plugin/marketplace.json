@@ -6,7 +6,7 @@
       "name": "aed",
       "source": "./plugins/aed",
       "description": "Agent-Enhanced Development: naming + process-manager conventions as skills, a planning-stage name checker, and an edit-time naming hook for Ruby, Crystal, and Elixir.",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "author": { "name": "AgentC Consulting", "url": "https://agentc.consulting" }
     }
   ]
