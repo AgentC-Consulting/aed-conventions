@@ -21,7 +21,7 @@ naming hook) than in the same codebase without it?
     burn-down (PR #25: 243 warns → 0, specs 1021/1021 green and byte-identical to the
     pre-rename baseline), plus the CLAUDE.md AED section and the advisory naming hook
     (aed plugin v0.1.2). **The arms differ by the whole AED bundle, not names alone.**
-- **Task** (identical, [task_prompt.md](task_prompt.md)): build a pet tracker — Grant
+- **Task** (identical, [pet_tracker_task.md](pet_tracker_task.md)): build a pet tracker — Grant
   model, migration file, 7-action RESTful controller, routes, component-based index +
   form views, no auth — following the codebase's existing patterns, finishing with the
   whole app type-checking clean.
@@ -77,4 +77,4 @@ Two runs per arm, one task, one codebase, one model, one machine: a demonstratio
 not a study. Arms bundle names + instructions + tooling. Wall-clock times are not
 comparable (one run was inflated by API latency). Token counts favor the terse arm
 and are published unspun. To rerun: check out either branch, install the plugin (or
-don't), and pipe `task_prompt.md` through the runner.
+don't), and pipe `pet_tracker_task.md` through the runner.
