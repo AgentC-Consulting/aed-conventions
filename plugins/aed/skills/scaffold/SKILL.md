@@ -1,8 +1,7 @@
 ---
-description: "Scaffold a process manager from a When-statement"
+name: scaffold
+description: "Scaffold a process manager from a When-statement, verify its names with the AED linter, and write it in the project's language."
 ---
-
-When-statement argument: $ARGUMENTS
 
 Scaffold a process manager from a "When … then …" statement, using the AED
 process-manager workflow.

@@ -10,16 +10,22 @@
 # Usage:
 #   ruby aed_lint.rb [--format text|json] [--strict] <files-or-dirs...>
 #   ruby aed_lint.rb check-name --kind boolean|collection|attribute|class|method <name...>
-#   ruby aed_lint.rb --hook       # reads a Claude Code PostToolUse event on stdin
+#   ruby aed_lint.rb --hook       # reads a Claude Code or Codex hook event on stdin
 #
 # Canon: https://github.com/AgentC-Consulting/aed-conventions
 
 require "json"
+require "digest"
+require "fileutils"
+require "open3"
+require "tmpdir"
 
 module AedLint
   CANON_URL = "https://github.com/AgentC-Consulting/aed-conventions"
 
   SUPPORTED_FILE_EXTENSIONS = %w[.rb .cr .ex .exs].freeze
+  PATCH_PATH_PATTERN = /^\*\*\* (?:Add File|Update File|Move to): ([^\r\n]+)$/.freeze
+  HOOK_STAMP_DIRECTORY = File.join(Dir.tmpdir, "aed_lint_hook")
 
   # A boolean name "reads as a yes/no question or statement" when any of its
   # snake_case tokens is one of these — the auxiliary verb is allowed to sit
@@ -905,28 +911,32 @@ module AedLint
 
     # -- PostToolUse hook ---------------------------------------------------
 
-    # Never exits nonzero and never prints anything that is not the hook JSON.
+    # Claude Code supplies a file_path. Codex supplies apply_patch text or a
+    # Bash command, so work out the changed paths from each harness's payload.
+    # Hook findings are always advisory and always use Codex's additionalContext
+    # envelope, which Claude Code also accepts.
     def run_the_post_tool_use_hook
       hook_event = JSON.parse(@standard_input.read.to_s)
-      edited_file_path = extract_edited_file_path(hook_event)
-      return 0 if edited_file_path.nil?
-      return 0 unless in_scope?(edited_file_path)
-      return 0 unless File.file?(edited_file_path) && File.readable?(edited_file_path)
+      return 0 unless hook_event.is_a?(Hash)
 
-      relative_path = relative_display_path(edited_file_path)
-      list_of_findings = AnalyzeSourceFileForNamingFindings.new(relative_path, File.read(edited_file_path)).perform
-      return 0 if list_of_findings.empty?
+      if hook_event["hook_event_name"] == "SessionStart"
+        record_session_start(hook_event)
+        return 0
+      end
 
-      @standard_output.puts(JSON.generate(hook_payload_for(relative_path, list_of_findings)))
+      working_directory = working_directory_for(hook_event)
+      list_of_edited_file_paths = extract_edited_file_paths(hook_event, working_directory)
+      list_of_findings_by_path = findings_for_edited_paths(list_of_edited_file_paths, working_directory)
+      return 0 if list_of_findings_by_path.empty?
+
+      additional_context = additional_context_for(list_of_findings_by_path)
+      @standard_output.puts(JSON.generate(hook_payload_for(additional_context)))
       0
     rescue StandardError
       0
     end
 
-    def hook_payload_for(relative_path, list_of_findings)
-      additional_context = "AED naming check on #{relative_path}:\n" \
-                           "#{list_of_findings.map(&:as_text_line).join("\n")}\n" \
-                           "These are advisory — the AED canon is at #{CANON_URL}"
+    def hook_payload_for(additional_context)
       {
         "hookSpecificOutput" => {
           "hookEventName" => "PostToolUse",
@@ -935,21 +945,116 @@ module AedLint
       }
     end
 
-    def extract_edited_file_path(hook_event)
-      return nil unless hook_event.is_a?(Hash)
-
+    def extract_edited_file_paths(hook_event, working_directory)
       tool_input = hook_event["tool_input"]
-      return nil unless tool_input.is_a?(Hash)
+      return [] unless tool_input.is_a?(Hash)
 
       candidate_path = tool_input["file_path"] || tool_input["filePath"] || tool_input["path"]
-      candidate_path.is_a?(String) && !candidate_path.empty? ? candidate_path : nil
+      return [File.expand_path(candidate_path, working_directory)] if candidate_path.is_a?(String) && !candidate_path.empty?
+
+      case hook_event["tool_name"].to_s
+      when "apply_patch"
+        file_paths_in_apply_patch(tool_input["command"], working_directory)
+      when "Bash"
+        git_dirty_source_files_changed_during_session(hook_event, working_directory)
+      else
+        []
+      end
     end
 
-    def relative_display_path(absolute_or_relative_path)
-      working_directory_prefix = "#{Dir.pwd}#{File::SEPARATOR}"
-      return absolute_or_relative_path[working_directory_prefix.length..-1] if absolute_or_relative_path.start_with?(working_directory_prefix)
+    def file_paths_in_apply_patch(patch_text, working_directory)
+      patch_text.to_s.lines.each_with_object([]) do |patch_line, list_of_file_paths|
+        path_match = PATCH_PATH_PATTERN.match(patch_line)
+        next unless path_match
 
-      absolute_or_relative_path
+        list_of_file_paths << File.expand_path(path_match[1].strip, working_directory)
+      end.uniq
+    end
+
+    def git_dirty_source_files_changed_during_session(hook_event, working_directory)
+      repository_root = git_root_for(working_directory)
+      return [] if repository_root.nil?
+
+      session_stamp = session_start_stamp_path(hook_event, working_directory)
+      session_started_at = File.file?(session_stamp) ? File.mtime(session_stamp) : Time.now - 600
+      git_status, status = Open3.capture2(
+        "git", "-C", repository_root, "status", "--porcelain=v1", "-z", "-uall",
+        err: File::NULL
+      )
+      return [] unless status.success?
+
+      git_status.split("\0").each_with_object([]) do |status_record, list_of_file_paths|
+        relative_path = status_record[3..-1].to_s
+        next if relative_path.empty?
+
+        absolute_path = File.expand_path(relative_path, repository_root)
+        next unless in_scope?(absolute_path)
+        next unless File.file?(absolute_path) && File.mtime(absolute_path) > session_started_at
+
+        list_of_file_paths << absolute_path
+      end.uniq
+    rescue StandardError
+      []
+    end
+
+    def git_root_for(working_directory)
+      output, status = Open3.capture2(
+        "git", "-C", working_directory, "rev-parse", "--show-toplevel",
+        err: File::NULL
+      )
+      status.success? ? output.strip : nil
+    rescue StandardError
+      nil
+    end
+
+    def record_session_start(hook_event)
+      FileUtils.mkdir_p(HOOK_STAMP_DIRECTORY)
+      FileUtils.touch(session_start_stamp_path(hook_event, working_directory_for(hook_event)))
+    end
+
+    def session_start_stamp_path(hook_event, working_directory)
+      session_id = hook_event["session_id"].to_s.gsub(/[^A-Za-z0-9_-]/, "")
+      if session_id.empty?
+        working_directory_digest = Digest::SHA256.hexdigest(working_directory)[0, 12]
+        session_id = "unknown-#{working_directory_digest}"
+      end
+
+      File.join(HOOK_STAMP_DIRECTORY, "#{session_id}.stamp")
+    end
+
+    def working_directory_for(hook_event)
+      candidate_directory = hook_event["cwd"].to_s
+      candidate_directory.empty? ? Dir.pwd : File.expand_path(candidate_directory)
+    end
+
+    def findings_for_edited_paths(list_of_edited_file_paths, working_directory)
+      list_of_edited_file_paths.each_with_object([]) do |edited_file_path, list_of_findings_by_path|
+        absolute_path = File.expand_path(edited_file_path, working_directory)
+        next unless in_scope?(absolute_path)
+        next unless File.file?(absolute_path) && File.readable?(absolute_path)
+
+        relative_path = relative_display_path(absolute_path, working_directory)
+        list_of_findings = AnalyzeSourceFileForNamingFindings.new(relative_path, File.read(absolute_path)).perform
+        list_of_findings_by_path << [relative_path, list_of_findings] unless list_of_findings.empty?
+      end
+    end
+
+    def additional_context_for(list_of_findings_by_path)
+      context_lines = []
+      list_of_findings_by_path.each do |relative_path, list_of_findings|
+        context_lines << "AED naming check on #{relative_path}:"
+        context_lines.concat(list_of_findings.map(&:as_text_line))
+      end
+      context_lines << "These are advisory — the AED canon is at #{CANON_URL}"
+      context_lines.join("\n")
+    end
+
+    def relative_display_path(absolute_or_relative_path, working_directory)
+      absolute_path = File.expand_path(absolute_or_relative_path, working_directory)
+      working_directory_prefix = "#{File.expand_path(working_directory)}#{File::SEPARATOR}"
+      return absolute_path[working_directory_prefix.length..-1] if absolute_path.start_with?(working_directory_prefix)
+
+      absolute_path
     end
   end
 end

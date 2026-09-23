@@ -1,9 +1,3 @@
----
-description: "Scaffold a process manager from a When-statement"
----
-
-When-statement argument: $ARGUMENTS
-
 Scaffold a process manager from a "When … then …" statement, using the AED
 process-manager workflow.
 

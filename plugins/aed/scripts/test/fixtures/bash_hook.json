@@ -1,0 +1,8 @@
+{
+  "session_id": "aed-bash-fixture-session",
+  "hook_event_name": "PostToolUse",
+  "tool_name": "Bash",
+  "tool_input": {
+    "command": "cat > new_process_manager.rb <<'RUBY'\nclass LockOrders\n  def initialize(order)\n    @o = order\n  end\nend\nRUBY"
+  }
+}

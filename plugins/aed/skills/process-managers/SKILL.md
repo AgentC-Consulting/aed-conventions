@@ -1,4 +1,5 @@
 ---
+name: process-managers
 description: Scaffold AED (Agent-Enhanced Development) process managers from "When … then …" statements — a class named for the whole process, an `initialize` taking all needed data, a no-argument `perform` that reads like pseudocode, and namespaced middle managers, plus Crystal, Ruby, and Elixir templates. Use when adding non-RESTful business logic, workflows, or service objects in projects that adopt AED (AED named in CLAUDE.md or README), or when the user asks for an AED process manager.
 ---
 
@@ -88,15 +89,21 @@ Given a When-statement:
    (`collection_of_customers_that_were_locked`,
    `all_of_the_customers_have_been_processed`).
 6. **Emit the file** at the snake_case path for the class.
-7. **Check the names** before you write them:
+7. **Check the names** before you write them. In Claude Code,
+   `CLAUDE_PLUGIN_ROOT` resolves the script. In Codex, find the installed copy
+   under `${CODEX_HOME:-$HOME/.codex}/plugins/cache/`:
    ```bash
-   ruby ${CLAUDE_PLUGIN_ROOT}/scripts/aed_lint.rb check-name --kind class Billing::PerformCustomerAccountLocking
-   ruby ${CLAUDE_PLUGIN_ROOT}/scripts/aed_lint.rb check-name --kind collection array_of_customer_ids_to_lock
-   ruby ${CLAUDE_PLUGIN_ROOT}/scripts/aed_lint.rb check-name --kind method find_each_customer_record_by_the_provided_id
+   # Claude Code:
+   aed_lint_script="${CLAUDE_PLUGIN_ROOT}/scripts/aed_lint.rb"
+   # Codex (use this assignment instead):
+   # aed_lint_script="$(find "${CODEX_HOME:-$HOME/.codex}/plugins/cache" -path '*/aed/*/scripts/aed_lint.rb' -print -quit)"
+   ruby "$aed_lint_script" check-name --kind class Billing::PerformCustomerAccountLocking
+   ruby "$aed_lint_script" check-name --kind collection array_of_customer_ids_to_lock
+   ruby "$aed_lint_script" check-name --kind method find_each_customer_record_by_the_provided_id
    ```
    and lint the file after writing it:
    ```bash
-   ruby ${CLAUDE_PLUGIN_ROOT}/scripts/aed_lint.rb billing/perform_customer_account_locking.cr
+   ruby "$aed_lint_script" billing/perform_customer_account_locking.cr
    ```
 
 ## Reference output (canon example)
