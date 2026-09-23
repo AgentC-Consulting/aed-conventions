@@ -60,11 +60,18 @@ module AedLint
     "flag" => "a yes/no question phrase"
   }.freeze
 
-  # These are singular nouns that happen to end in s. Settings is deliberately
-  # not an exception: it is a countable plural and suggests Setting.
+  # These are singular nouns that happen to end in s.
   PLURAL_EXCEPTIONS = %w[
     status address class analysis basis series species news access process
     bus campus kudos business alias gas bias lens physics mathematics
+  ].freeze
+
+  # These words name collections, configuration bags, framework surfaces, or
+  # other plural concepts rather than one-record data models. Do not offer a
+  # singular rename for a class whose name contains one of them.
+  COLLECTIVE_DATA_CLASS_WORDS = %w[
+    settings options params metrics stats errors headers credentials preferences
+    filters styles connections operations
   ].freeze
 
   UNCOUNTABLE_WORDS = %w[
@@ -145,7 +152,22 @@ module AedLint
   SINGLE_WORD_METHOD_EXCEPTIONS = %w[
     initialize perform create edit update destroy index show new delete change
     save find find_by changeset setup teardown
+    parse call validate get clear where count token match add run register encode
+    continue build all resolve pluck set select reset id list json first execute
+    each decode verify validate url start size import callback tag put params order name
+    close open fetch map filter reduce inject select! reject! find! find_by! include?
+    includes includes? empty? length last last! keys values to_a to_h to_s inspect
+    hash eql? == [] []= transaction preload joins includes having group limit offset
+    distinct reorder reselect rewhere unscope unscoped reload insert delete_by update_all
+    create! update! destroy! method_missing respond_to_missing? method_added inherited
+    included extended append prepend before after around serialize deserialize encode_with
+    init decode! parse! load dump validate_each call_next call_next! write read send receive
   ].freeze
+
+  VAGUE_SINGLE_WORD_METHOD_NAMES = %w[process retry handle manage].freeze
+
+  DATA_FIELD_DECLARATION_PATTERN = /\A\s*(?:property|getter|setter|class_property|class_getter|class_setter|attr_reader|attr_writer|attr_accessor|attribute|field|column)\b/.freeze
+  JSON_SERIALIZABLE_MARKER_PATTERN = /\b(?:include|extend|use)\s+(?:::)?JSON::Serializable\b/.freeze
 
   MODEL_SUPERCLASSES = %w[
     ApplicationRecord ActiveRecord::Base Granite::Base Grant::Base
@@ -226,6 +248,22 @@ module AedLint
       singularized(candidate_word) != candidate_word.to_s
     end
 
+    def collective_data_class_name?(candidate_name)
+      camel_case_words(final_namespace_segment(candidate_name)).any? do |class_word|
+        COLLECTIVE_DATA_CLASS_WORDS.include?(class_word.downcase)
+      end
+    end
+
+    def all_caps_acronym?(candidate_name)
+      bare_name = final_namespace_segment(candidate_name)
+      bare_name.length > 1 && bare_name =~ /\A[A-Z0-9]+\z/
+    end
+
+    def vague_single_word_method?(candidate_name)
+      bare_name = candidate_name.to_s.sub(/[?!]\z/, "").downcase
+      VAGUE_SINGLE_WORD_METHOD_NAMES.include?(bare_name)
+    end
+
     def suggested_boolean_names(candidate_name, owning_model_name = nil)
       bare_name = candidate_name.to_s.sub(/[?!]\z/, "")
       owning_prefix = owning_model_name ? "#{snake_case_of(singularized(final_namespace_segment(owning_model_name)))}_" : ""
@@ -235,6 +273,7 @@ module AedLint
     def singularized(camel_case_name)
       original_word = camel_case_name.to_s
       downcased_word = original_word.downcase
+      return original_word if original_word.length > 1 && original_word =~ /\A[A-Z0-9]+\z/
       return original_word if PLURAL_EXCEPTIONS.include?(downcased_word)
       return original_word if UNCOUNTABLE_WORDS.include?(downcased_word)
 
@@ -262,6 +301,8 @@ module AedLint
       return nil if list_of_words.empty?
       return nil if FRAMEWORK_CLASS_SUFFIXES.include?(list_of_words.last.downcase)
       return nil if PROCESS_CLASS_START_VERBS.include?(list_of_words.first.downcase)
+      return nil if collective_data_class_name?(final_segment)
+      return nil if all_caps_acronym?(final_segment)
 
       first_class_phrase_boundary = list_of_words.index do |class_word|
         CLASS_HEAD_BOUNDARIES.include?(class_word.downcase)
@@ -289,7 +330,7 @@ module AedLint
 
     def action_method_name?(candidate_name)
       downcased_name = candidate_name.to_s.sub(/[?!]\z/, "").downcase
-      SINGLE_WORD_METHOD_EXCEPTIONS.include?(downcased_name) || candidate_name.to_s.end_with?("?")
+      SINGLE_WORD_METHOD_EXCEPTIONS.include?(downcased_name) || candidate_name.to_s.match?(/[?!]\z/)
     end
 
     def suggested_collection_names(candidate_name)
@@ -443,21 +484,33 @@ module AedLint
       method_name = method_match[1]
       return if NameGrammar.action_method_name?(method_name)
       return if NameGrammar.snake_case_tokens(method_name).length >= 2
+      return unless NameGrammar.vague_single_word_method?(method_name)
 
-      if NameGrammar.vague_or_single_letter?(method_name)
-        add_finding(
-          "AED-N1", "warn", line_number,
-          "method `#{method_name}` does not say what it does",
-          "name it as a short statement of its purpose, e.g. `process_orders_for_expired_payment_methods`"
-        )
-        return
-      end
+      signature_match = METHOD_SIGNATURE_PATTERN.match(source_line)
+      return if signature_match.nil? || parameter_names_in(signature_match[2]).empty?
+      return if method_is_a_framework_override?(method_name, line_number)
+      return if method_owner_uses_an_external_namespace?(line_number)
 
       add_finding(
-        "AED-N10", "warn", line_number,
-        "method `#{method_name}` is a single word and does not explain the process taking place",
+        "AED-N10", "info", line_number,
+        "method `#{method_name}` is a vague process name",
         "name the action and what it acts on, e.g. `process_orders_for_expired_payment_methods`"
       )
+    end
+
+    def method_is_a_framework_override?(method_name, line_number)
+      previous_source_line = @list_of_source_lines[line_number - 2].to_s
+      return true if previous_source_line =~ /\A\s*(?:@\[Override\]|@impl\s+true)\s*\z/
+
+      owning_definition = innermost_definition_containing(line_number)
+      return false if owning_definition.nil?
+      return true if NameGrammar.framework_class_name?(owning_definition.full_name)
+
+      definition_line = source_line_at(owning_definition.line)
+      framework_parent_pattern = /<\s*(?:HTTP::Handler|HTTP::Server::Handler|ApplicationController|ActionController::Base|Phoenix\.Controller)\b/
+      return true if definition_line =~ framework_parent_pattern
+
+      method_name == "process" && owning_definition.full_name =~ /\A(?:HTTP|Plug|Phoenix)(?:::|\.)/
     end
 
     def check_block_parameter_names(source_line, line_number)
@@ -654,15 +707,53 @@ module AedLint
       known_data_models = model_definitions_in_this_file
       data_class_definitions_in_this_file.each do |data_class_definition|
         next if known_data_models.include?(data_class_definition)
+        next if NameGrammar.collective_data_class_name?(data_class_definition.full_name)
+        next if NameGrammar.all_caps_acronym?(data_class_definition.full_name)
 
         suggested_singular_name = NameGrammar.suggested_singular_data_class_name(data_class_definition.full_name)
         next if suggested_singular_name.nil?
 
+        is_data_model = definition_looks_like_a_data_model?(data_class_definition)
+
         add_finding(
-          "AED-N9", "warn", data_class_definition.line,
-          "data class `#{data_class_definition.full_name}` has a plural head noun; data class names should be singular",
-          "e.g. `#{suggested_singular_name}`"
+          "AED-N9", is_data_model ? "warn" : "info", data_class_definition.line,
+          is_data_model ?
+            "data class `#{data_class_definition.full_name}` has a plural head noun; data class names should be singular" :
+            "class `#{data_class_definition.full_name}` has a plural head noun, but its source does not identify it as a data model",
+          is_data_model ?
+            "e.g. `#{suggested_singular_name}`" :
+            "if this class represents one record, consider `#{suggested_singular_name}`; otherwise keep the plural name"
         )
+      end
+    end
+
+    def definition_looks_like_a_data_model?(candidate_definition)
+      return true if candidate_definition.kind == "struct"
+      return true if language == :elixir && elixir_module_declares_a_struct?(candidate_definition)
+      return true if definition_declares_data_fields?(candidate_definition)
+      return true if definition_is_json_serializable?(candidate_definition)
+
+      primary_definition_of_this_file == candidate_definition &&
+        File.basename(display_path, File.extname(display_path)) ==
+          NameGrammar.snake_case_of(NameGrammar.final_namespace_segment(candidate_definition.full_name))
+    end
+
+    def definition_declares_data_fields?(candidate_definition)
+      source_lines_for_definition(candidate_definition).any? do |source_line|
+        source_line =~ DATA_FIELD_DECLARATION_PATTERN
+      end
+    end
+
+    def definition_is_json_serializable?(candidate_definition)
+      source_lines_for_definition(candidate_definition).any? do |source_line|
+        source_line =~ JSON_SERIALIZABLE_MARKER_PATTERN
+      end
+    end
+
+    def source_lines_for_definition(candidate_definition)
+      ending_line = candidate_definition.ending_line.to_i
+      @list_of_source_lines[(candidate_definition.line - 1)...ending_line].to_a.map do |raw_source_line|
+        strip_trailing_comment(raw_source_line)
       end
     end
 
@@ -778,29 +869,109 @@ module AedLint
       return if primary_definition.nil?
 
       namespace_segments = NameGrammar.namespace_segments(primary_definition.full_name)
-      # Elixir module names conventionally start with the application name,
-      # which does not usually have a matching source folder (for example,
-      # `AedFixtures.GoodNaming`). Check the feature namespace below that root.
-      namespace_segments = namespace_segments.drop(1) if language == :elixir
-      expected_namespace_folders = namespace_segments.map do |namespace_segment|
+      return if namespace_segments.empty?
+
+      project_details = project_details_for_file
+      return if project_details.nil?
+      return unless project_name_matches_namespace?(project_details[:namespace], namespace_segments.first)
+
+      feature_namespace_segments = namespace_segments.drop(1).map do |namespace_segment|
         NameGrammar.snake_case_of(namespace_segment)
       end
-      return if expected_namespace_folders.empty?
+      return if feature_namespace_segments.empty?
 
-      actual_folder_segments = File.dirname(display_path).tr("\\", "/").split("/").reject do |folder_segment|
-        folder_segment.empty? || folder_segment == "."
-      end
-      namespace_folders_are_present = actual_folder_segments.each_cons(expected_namespace_folders.length).any? do |folder_sequence|
-        folder_sequence == expected_namespace_folders
+      root_namespace_folder = NameGrammar.snake_case_of(namespace_segments.first)
+      actual_folder_segments = folders_relative_to_source_root(project_details[:root])
+      expected_folder_sequences = [feature_namespace_segments, [root_namespace_folder] + feature_namespace_segments]
+      namespace_folders_are_present = expected_folder_sequences.any? do |expected_folder_sequence|
+        actual_folder_segments.each_cons(expected_folder_sequence.length).any? do |folder_sequence|
+          folder_sequence == expected_folder_sequence
+        end
       end
       return if namespace_folders_are_present
 
-      namespace_path = expected_namespace_folders.join("/")
+      namespace_path = feature_namespace_segments.join("/")
       add_finding(
         "AED-N11", "info", primary_definition.line,
-        "namespaced definition `#{primary_definition.full_name}` is not stored under its namespace folder `#{namespace_path}`",
+        "project definition `#{primary_definition.full_name}` is not stored under its feature namespace folder `#{namespace_path}`",
         "place the file beneath `#{namespace_path}/` to match its namespace"
       )
+    end
+
+    def project_details_for_file
+      absolute_file_path = File.expand_path(display_path)
+      current_directory = File.dirname(absolute_file_path)
+
+      loop do
+        project_namespace = namespace_from_project_manifest(current_directory)
+        return { root: current_directory, namespace: project_namespace } unless project_namespace.nil?
+
+        parent_directory = File.dirname(current_directory)
+        break if parent_directory == current_directory
+
+        current_directory = parent_directory
+      end
+
+      source_path_segments = absolute_file_path.tr("\\", "/").split("/")
+      source_root_index = source_path_segments.rindex { |path_segment| %w[src lib].include?(path_segment) }
+      return nil if source_root_index.nil? || source_root_index >= source_path_segments.length - 2
+
+      {
+        root: source_path_segments[0..source_root_index].join(File::SEPARATOR),
+        namespace: source_path_segments[source_root_index + 1]
+      }
+    end
+
+    def namespace_from_project_manifest(project_directory)
+      case language
+      when :crystal
+        read_match_from_file(File.join(project_directory, "shard.yml"), /^\s*name:\s*["']?([^\s"'#]+)["']?\s*$/)
+      when :elixir
+        read_match_from_file(File.join(project_directory, "mix.exs"), /\bapp:\s*:([A-Za-z0-9_]+)/)
+      when :ruby
+        gemspec_path = Dir.glob(File.join(project_directory, "*.gemspec")).first
+        read_match_from_file(gemspec_path, /\b(?:spec|s)\.name\s*=\s*["']([^"']+)["']/)
+      end
+    end
+
+    def read_match_from_file(file_path, pattern)
+      return nil if file_path.nil? || !File.file?(file_path)
+
+      File.read(file_path)[pattern, 1]
+    rescue SystemCallError
+      nil
+    end
+
+    def project_name_matches_namespace?(project_name, namespace_segment)
+      normalize_project_name(project_name) == normalize_project_name(NameGrammar.snake_case_of(namespace_segment))
+    end
+
+    def normalize_project_name(project_name)
+      project_name.to_s.downcase.tr("-", "_").gsub(/_+/, "_")
+    end
+
+    def folders_relative_to_source_root(project_root)
+      absolute_file_path = File.expand_path(display_path).tr("\\", "/")
+      absolute_project_root = File.expand_path(project_root).tr("\\", "/").sub(%r{/+\z}, "")
+      return [] unless absolute_file_path.start_with?("#{absolute_project_root}/")
+
+      relative_path_segments = absolute_file_path[(absolute_project_root.length + 1)..].split("/")
+      actual_folder_segments = relative_path_segments[0...-1]
+      source_root_index = actual_folder_segments.rindex { |path_segment| %w[src lib].include?(path_segment) }
+      source_root_index ? actual_folder_segments[(source_root_index + 1)..] : actual_folder_segments
+    end
+
+    def method_owner_uses_an_external_namespace?(line_number)
+      owning_definition = innermost_definition_containing(line_number)
+      return false if owning_definition.nil?
+
+      namespace_segments = NameGrammar.namespace_segments(owning_definition.full_name)
+      return false if namespace_segments.empty?
+
+      project_details = project_details_for_file
+      return false if project_details.nil?
+
+      !project_name_matches_namespace?(project_details[:namespace], namespace_segments.first)
     end
 
     def classes_that_define_a_no_argument_perform
@@ -984,6 +1155,9 @@ module AedLint
           "a short statement of the process, e.g. `AddSubscriptionToCustomer`"
         )
       end
+      return acceptable_verdict if NameGrammar.collective_data_class_name?(final_segment)
+      return acceptable_verdict if NameGrammar.all_caps_acronym?(final_segment)
+
       suggested_singular_name = NameGrammar.suggested_singular_data_class_name(final_segment)
       if suggested_singular_name
         return rename_verdict(
@@ -1009,6 +1183,7 @@ module AedLint
       end
       return acceptable_verdict if NameGrammar.action_method_name?(@candidate_name)
       return acceptable_verdict if NameGrammar.snake_case_tokens(@candidate_name).length >= 2
+      return acceptable_verdict unless NameGrammar.vague_single_word_method?(@candidate_name)
 
       rename_verdict(
         "method names are phrases or statements that explain the process taking place (AED-N10)",

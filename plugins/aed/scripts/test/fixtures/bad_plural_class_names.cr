@@ -3,8 +3,9 @@ module BadPluralClassNames
   end
 
   class CustomerStatuses
+    property customer_status_id : Int64
   end
 
-  class People
+  struct People
   end
 end

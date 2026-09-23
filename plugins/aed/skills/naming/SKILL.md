@@ -55,23 +55,31 @@ General principles: avoid unnecessary jargon or slang; names that read like plai
 English are preferred.
 
 Keep the head noun of a data model or data struct singular (`Order`, not
-`Orders`). The linter checks Ruby and Crystal classes/structs and Elixir modules
-that declare `defstruct` or use `Ecto.Schema`. It leaves module-only feature
-namespaces, action-led process managers, controllers, migrations, specs, and
-tests alone. `Settings` is treated as plural and suggests `Setting`; singular
+`Orders`). AED-N5 handles ORM/Ecto models. AED-N9 warns for non-ORM classes with
+data evidence such as a struct, property/field declarations, or
+`JSON::Serializable`. A plain primary class named `Orders` in `orders.rb` also
+qualifies by the one-class-per-file convention. Other plural class candidates
+are informational. The rule exempts configuration and aggregate names such as
+`Settings`, `SMTPSettings`, `Options`, `Params`, `Metrics`, `QueryStats`,
+`Errors`, `Filters`, `Styles`,
+`SecurityHeaders`, `Connections`, `BatchOperations`, `Credentials`, and
+`Preferences`; all-caps acronyms such as `CORS` are not singularized. Singular
 words such as `Status`, `Address`, `Business`, `Analysis`, `News`, `Series`, and
 `Species`, along with common uncountable nouns, stay unflagged.
 
-Method names explain the action taking place. A bare `process` is too vague;
-name the object or result as well. Process-manager entry points such as
-`perform`, lifecycle methods such as `initialize`, yes/no predicates ending in
-`?`, and standard framework actions keep their established names.
+Method names explain the action taking place. AED-N10 is conservative: it gives
+an informational finding for parameterized `process`, `retry`, `handle`, or
+`manage` methods. It leaves standard protocol, collection, query, accessor, and
+framework-hook names alone. Process-manager entry points such as `perform`,
+lifecycle methods such as `initialize`, yes/no predicates ending in `?`, and
+standard framework actions keep their established names.
 
-The linter checks that an explicitly namespaced primary definition is stored
-beneath folders named for its namespace (AED-N11), such as
-`Billing::Admin::OrderProcessor` in `billing/admin/order_processor.rb`.
-For Elixir, the top-level application module is treated as the app root; the
-check applies to feature namespaces beneath it.
+AED-N11 checks an explicitly namespaced primary definition only when its root
+namespace matches the project name from `shard.yml`, `mix.exs`, a gemspec, or a
+top-level folder under `src`/`lib`. Reopened dependency namespaces such as
+`HTTP::Request` are ignored. A Crystal project root segment may be omitted from
+the source folders: `Grant::Adapter::Base` is accepted in
+`src/adapter/base.cr`.
 
 **Never create a whole new lexicon for your code base by applying a theme.** No
 Star Wars class names, no weather metaphors, no house vocabulary invented to feel

@@ -67,15 +67,25 @@ ruby plugins/aed/scripts/aed_lint.rb --hook
 ```
 
 Plural data-model and data-struct names are checked in Ruby, Crystal, and
-Elixir. The linter treats `Settings` as plural and suggests `Setting`; it
-preserves singular words such as `Status`, `Address`, `Business`, `Analysis`,
-`News`, and `Series`. It leaves module-only namespaces, action-led process
-managers, controllers, migrations, specs, and tests alone. A bare method such as
-`process` is also flagged because it does not say what process takes place.
-It also checks that an explicitly namespaced primary definition is stored under
-folders named for the namespace, such as `Billing::Admin::OrderProcessor` in
-`billing/admin/order_processor.rb`. In Elixir, it treats the first module segment
-as the app root and checks feature namespaces beneath it.
+Elixir. AED-N5 handles ORM/Ecto models. AED-N9 warns for non-ORM classes with
+data evidence such as a struct, property/field declaration, or
+`JSON::Serializable`; an unannotated primary class named `Orders` in `orders.rb`
+also qualifies. Other plural class candidates are informational. It exempts
+configuration and aggregate names such as `Settings`, `SMTPSettings`, `Options`,
+`Params`, `Metrics`, `QueryStats`,
+`Errors`, `Filters`, `Styles`, `SecurityHeaders`, `Connections`,
+`BatchOperations`, `Credentials`, and `Preferences`; all-caps acronyms such as
+`CORS` are not singularized. Singular words such as `Status`, `Address`,
+`Business`, `Analysis`, `News`, and `Series` stay unflagged.
+
+AED-N10 is conservative: it gives an informational finding for parameterized
+`process`, `retry`, `handle`, or `manage` methods, while standard protocol,
+collection, query, accessor, and framework-hook names keep their established
+spelling. AED-N11 checks explicitly namespaced primary definitions only when the
+root namespace matches the project name from `shard.yml`, `mix.exs`, a gemspec,
+or a top-level folder under `src`/`lib`; reopened dependency namespaces such as
+`HTTP::Request` are ignored. A Crystal project root segment can be omitted from
+the source path, so `Grant::Adapter::Base` in `src/adapter/base.cr` is accepted.
 
 In Claude Code's plugin command and hook context, the script path is
 `${CLAUDE_PLUGIN_ROOT}/scripts/aed_lint.rb`. Codex hook commands receive

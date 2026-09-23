@@ -5,9 +5,6 @@ defmodule AedFixtures.BadPluralClassNames do
   defmodule CustomerAddresses do
     defstruct []
   end
-  defmodule Settings do
-    defstruct []
-  end
   defmodule Analyses do
     defstruct []
   end
