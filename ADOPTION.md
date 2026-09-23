@@ -13,6 +13,41 @@ published.
 
 ---
 
+## 2026-09-22 — Codex marketplace and plugin parity added
+
+**Practiced same day.** The AED plugin now supports Codex CLI alongside Claude
+Code. The `0.2.0` plugin release uses one shared `plugins/aed/` directory with
+both harness manifests, shared skills, scripts, and workflow sources:
+
+- `.agents/plugins/marketplace.json` exposes the `aed` plugin from
+  `./plugins/aed` to Codex. Install with
+  `codex plugin marketplace add AgentC-Consulting/aed-conventions` then
+  `codex plugin add aed@aed-conventions`.
+- `plugins/aed/.codex-plugin/plugin.json` points Codex at the shared skills
+  and registers inline `SessionStart` and `PostToolUse` hooks.
+- The naming, planning, and process-manager skills are shared. The Claude
+  slash commands `/aed:check`, `/aed:scaffold`, and `/aed:adopt` are also
+  packaged as Codex skills, generated with the commands from the same workflow
+  sources.
+- `aed_lint.rb --hook` accepts Claude's `tool_input.file_path`, Codex's
+  `apply_patch` command text, and Codex Bash calls. For Bash edits it lints
+  Git-dirty Ruby, Crystal, and Elixir files changed since the `SessionStart`
+  timestamp; its feedback remains advisory through `additionalContext`.
+- The adopt workflow writes one AED section to `AGENTS.md` when Codex or both
+  harnesses are used. It makes Claude Code import that file through
+  `@AGENTS.md`; Claude-only projects use `CLAUDE.md`.
+
+Codex CLI requires the user to review and trust plugin hooks before executing
+them. The Bash fallback also requires a Git working tree so it can discover
+which source files changed.
+
+Plugin packaging remains versioned separately from the canon's signed `v1.x`
+tags. The versioned plugin manifests are
+`plugins/aed/.claude-plugin/plugin.json` and
+`plugins/aed/.codex-plugin/plugin.json`; both carry version `0.2.0`.
+
+---
+
 ## 2026-08-01 — Claude Code plugin packaging added
 
 **Practiced same day.** The AED conventions are now installable as a Claude

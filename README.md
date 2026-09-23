@@ -116,22 +116,20 @@ git clone --branch v1.1.0-rc.1 --depth 1 https://github.com/AgentC-Consulting/ae
 Pin to the tag, not to `main`. `main` still carries `v1.0.0` until this
 candidate is promoted.
 
-## Install the AED plugin (Claude Code)
+## Install
 
-The naming doctrine, process managers, and feature-story rules above are also
-packaged as a Claude Code plugin: skills that apply AED while planning and
-editing, `/aed:check` / `/aed:scaffold` / `/aed:adopt` commands, an advisory
-naming linter for Ruby, Crystal, and Elixir, and an edit-time hook that
-surfaces naming issues without ever blocking an edit.
+The AED plugin is available for both Claude Code and Codex CLI. Both installs
+provide the same naming, planning, and process-manager skills, the same three
+workflows, and the same advisory Ruby, Crystal, and Elixir naming linter.
+The plugin package is version `0.2.0`, versioned independently from the AED
+canon releases.
 
-In-app:
+| Claude Code | Codex CLI |
+|---|---|
+| `/plugin marketplace add AgentC-Consulting/aed-conventions`<br>`/plugin install aed@aed-conventions` | `codex plugin marketplace add AgentC-Consulting/aed-conventions`<br>`codex plugin add aed@aed-conventions` |
 
-```
-/plugin marketplace add AgentC-Consulting/aed-conventions
-/plugin install aed@aed-conventions
-```
-
-Or paste this into any Claude Code session and let Claude drive the install:
+Claude Code users can also paste this into a session and let Claude drive the
+install:
 
 ```
 Install the AED conventions plugin:
@@ -141,18 +139,23 @@ Install the AED conventions plugin:
    then give me one example of a boolean attribute name that passes AED naming.
 ```
 
-**What you get:** the `aed:naming`, `aed:planning`, and
-`aed:process-managers` skills; the `/aed:check`, `/aed:scaffold`, and
-`/aed:adopt` slash commands; and a `PostToolUse` hook that runs the naming
-linter after edits to Ruby, Crystal, or Elixir files — advisory only, it
-never blocks.
+### Support parity
 
-**Requirements:** Claude Code with plugin support, and `ruby` on PATH for the
-linter and the hook (macOS and most Linux distros ship it already). Without
-`ruby` the skills still work; the hook silently no-ops.
+| Feature | Claude Code | Codex | Notes |
+|---|---|---|---|
+| Naming, planning, and process-manager skills | `aed:naming`, `aed:planning`, `aed:process-managers` | `aed:naming`, `aed:planning`, `aed:process-managers` | Shared skill files and conventions. |
+| Check names and changed files | `/aed:check [paths]` | `aed:check` skill; include paths in the request | Same linter and finding triage. Codex exposes this as a skill, not a plugin slash command. |
+| Scaffold a process manager | `/aed:scaffold <When-statement>` | `aed:scaffold` skill; include the When-statement in the request | Same name derivation, verification, and file layout. |
+| Adopt AED into project instructions | `/aed:adopt` | `aed:adopt` skill | Uses one `AGENTS.md` section when both harnesses are present; Claude Code imports it with `@AGENTS.md`. Claude-only projects use `CLAUDE.md`. |
+| Edit-time naming check | `PostToolUse` after Edit, Write, or MultiEdit | `PostToolUse` after `apply_patch` or Bash | Checks `.rb`, `.cr`, `.ex`, and `.exs` files. Apply-patch paths come from patch text; Bash writes are found from Git-dirty files changed since session start. |
+| Hook feedback | Advisory `additionalContext` | Advisory `additionalContext` | Hook findings do not block edits. Codex asks users to review and trust plugin hooks before they run. |
 
-See [`plugins/aed/README.md`](plugins/aed/README.md) for the full command and
-linter-CLI reference.
+**Requirements:** the selected harness must support plugins, and `ruby` must be
+on PATH for the linter and edit-time hook. Without Ruby, the skills still work;
+the hook no-ops.
+
+See [`plugins/aed/README.md`](plugins/aed/README.md) for the plugin manifest,
+command, and linter-CLI details.
 
 ## If you're a coding agent
 
