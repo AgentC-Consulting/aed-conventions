@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Executable rubric for the aed-conventions Claude Code plugin/marketplace
-# packaging. Prints one "PASS/FAIL/SKIP <id> <message>" line per check and
+# Executable rubric for the aed-conventions Claude Code and Codex plugin
+# marketplace packaging. Prints one "PASS/FAIL/SKIP <id> <message>" line per check and
 # exits nonzero if any check FAILs. No dependencies beyond ruby and git.
 #
 # Usage: bash scripts/validate_plugin.sh   (run from anywhere; cds to repo root)
@@ -17,23 +17,38 @@ fail() { printf 'FAIL %s %s\n' "$1" "$2"; FAILURES=$((FAILURES + 1)); }
 skip() { printf 'SKIP %s %s\n' "$1" "$2"; }
 
 # ---------------------------------------------------------------------------
-# V1: both manifest JSONs parse and contain their required fields.
+# V1: both marketplaces and both plugin manifests parse, and plugin identity
+# fields stay in sync across harnesses.
 # ---------------------------------------------------------------------------
 V1_MSG=$(ruby -rjson -e '
 begin
-  mp = JSON.parse(File.read(".claude-plugin/marketplace.json"))
-  raise "marketplace.json missing name" unless mp["name"].is_a?(String) && !mp["name"].empty?
-  raise "marketplace.json missing owner" unless mp["owner"].is_a?(Hash) && !mp["owner"].empty?
-  plugins = mp["plugins"]
-  raise "marketplace.json missing plugins[0]" unless plugins.is_a?(Array) && plugins[0].is_a?(Hash)
-  raise "marketplace.json plugins[0].name missing" unless plugins[0]["name"].is_a?(String) && !plugins[0]["name"].empty?
-  raise "marketplace.json plugins[0].source missing" unless plugins[0]["source"].is_a?(String) && !plugins[0]["source"].empty?
+  claude_marketplace = JSON.parse(File.read(".claude-plugin/marketplace.json"))
+  codex_marketplace = JSON.parse(File.read(".agents/plugins/marketplace.json"))
+  claude_plugin = JSON.parse(File.read("plugins/aed/.claude-plugin/plugin.json"))
+  codex_plugin = JSON.parse(File.read("plugins/aed/.codex-plugin/plugin.json"))
 
-  pj = JSON.parse(File.read("plugins/aed/.claude-plugin/plugin.json"))
-  raise "plugin.json missing name" unless pj["name"].is_a?(String) && !pj["name"].empty?
-  raise "plugin.json missing description" unless pj["description"].is_a?(String) && !pj["description"].empty?
+  raise "Claude marketplace name missing" unless claude_marketplace["name"] == "aed-conventions"
+  raise "Claude marketplace owner missing" unless claude_marketplace["owner"].is_a?(Hash)
+  claude_entry = claude_marketplace.fetch("plugins", []).find { |plugin| plugin["name"] == "aed" }
+  raise "Claude marketplace plugin entry missing" unless claude_entry
+  raise "Codex marketplace name missing" unless codex_marketplace["name"] == "aed-conventions"
+  codex_entry = codex_marketplace.fetch("plugins", []).find { |plugin| plugin["name"] == "aed" }
+  raise "Codex marketplace plugin entry missing" unless codex_entry
 
-  puts "both manifests parse and contain required fields"
+  %w[name version description].each do |field|
+    raise "plugin manifests disagree on #{field}" unless claude_plugin[field] == codex_plugin[field]
+  end
+  raise "plugin version must be 0.2.0" unless claude_plugin["version"] == "0.2.0"
+  raise "plugin name must be aed" unless claude_plugin["name"] == "aed"
+  raise "Codex skills path must be ./skills/" unless codex_plugin["skills"] == "./skills/"
+  raise "Codex command migration must be disabled with an empty commands list" unless codex_plugin["commands"] == []
+  raise "Claude marketplace version is out of sync" unless claude_entry["version"] == claude_plugin["version"]
+  raise "Claude marketplace description is out of sync" unless claude_entry["description"] == claude_plugin["description"]
+  raise "Codex marketplace source must be local" unless codex_entry.dig("source", "source") == "local"
+  raise "Codex marketplace install policy missing" unless codex_entry.dig("policy", "installation") == "AVAILABLE"
+  raise "Codex marketplace auth policy missing" unless codex_entry.dig("policy", "authentication") == "ON_INSTALL"
+
+  puts "both marketplaces and plugin manifests parse; name, version, and description match"
 rescue => e
   STDERR.puts e.message
   exit 1
@@ -42,18 +57,22 @@ end
 if [ $? -eq 0 ]; then pass V1 "$V1_MSG"; else fail V1 "$V1_MSG"; fi
 
 # ---------------------------------------------------------------------------
-# V2: plugins[0].source path exists and contains .claude-plugin/plugin.json.
+# V2: both marketplace source paths exist and contain their harness manifests.
 # ---------------------------------------------------------------------------
 V2_MSG=$(ruby -rjson -e '
 begin
-  mp = JSON.parse(File.read(".claude-plugin/marketplace.json"))
-  source = mp["plugins"][0]["source"]
-  raise "source must start with ./ (got #{source.inspect})" unless source.start_with?("./")
-  path = source.sub(%r{\A\./}, "")
-  raise "source path #{path} does not exist" unless Dir.exist?(path)
-  manifest = File.join(path, ".claude-plugin", "plugin.json")
-  raise "#{manifest} does not exist" unless File.exist?(manifest)
-  puts "source #{source} exists and contains .claude-plugin/plugin.json"
+  claude_marketplace = JSON.parse(File.read(".claude-plugin/marketplace.json"))
+  codex_marketplace = JSON.parse(File.read(".agents/plugins/marketplace.json"))
+  claude_source = claude_marketplace.fetch("plugins").find { |plugin| plugin["name"] == "aed" }.fetch("source")
+  codex_source = codex_marketplace.fetch("plugins").find { |plugin| plugin["name"] == "aed" }.dig("source", "path")
+  { "Claude" => claude_source, "Codex" => codex_source }.each do |harness, source|
+    raise "#{harness} source must start with ./ (got #{source.inspect})" unless source.is_a?(String) && source.start_with?("./")
+    plugin_path = source.sub(%r{\A\./}, "")
+    raise "#{harness} source path #{plugin_path} does not exist" unless Dir.exist?(plugin_path)
+  end
+  raise "Claude plugin manifest missing" unless File.file?(File.join(claude_source, ".claude-plugin/plugin.json"))
+  raise "Codex plugin manifest missing" unless File.file?(File.join(codex_source, ".codex-plugin/plugin.json"))
+  puts "both marketplace source paths resolve to the shared plugins/aed directory"
 rescue => e
   STDERR.puts e.message
   exit 1
@@ -62,36 +81,63 @@ end
 if [ $? -eq 0 ]; then pass V2 "$V2_MSG"; else fail V2 "$V2_MSG"; fi
 
 # ---------------------------------------------------------------------------
-# V3: hooks.json parses; every ${CLAUDE_PLUGIN_ROOT}-relative command target
-# maps to an existing file under plugins/aed.
+# V3: Claude hooks.json and Codex inline hooks parse; their plugin-root command
+# targets map to an existing file under plugins/aed.
 # ---------------------------------------------------------------------------
 V3_MSG=$(ruby -rjson -e '
 begin
-  hooks_path = "plugins/aed/hooks/hooks.json"
-  raise "#{hooks_path} not found" unless File.exist?(hooks_path)
-  data = JSON.parse(File.read(hooks_path))
-  commands = []
-  (data["hooks"] || {}).each do |_event, entries|
+  claude_hooks_path = "plugins/aed/hooks/hooks.json"
+  raise "#{claude_hooks_path} not found" unless File.exist?(claude_hooks_path)
+  claude_hook_data = JSON.parse(File.read(claude_hooks_path))
+  codex_manifest = JSON.parse(File.read("plugins/aed/.codex-plugin/plugin.json"))
+  codex_hook_data = codex_manifest.dig("hooks", "hooks")
+  raise "Codex inline hooks are missing" unless codex_hook_data.is_a?(Hash)
+  raise "Codex SessionStart hook is missing" unless codex_hook_data["SessionStart"].is_a?(Array)
+  post_tool_use_entries = codex_hook_data["PostToolUse"]
+  raise "Codex PostToolUse hook is missing" unless post_tool_use_entries.is_a?(Array)
+  raise "Codex PostToolUse must match apply_patch and Bash" unless post_tool_use_entries.any? { |entry| entry["matcher"] == "apply_patch|Bash" }
+
+  claude_commands = []
+  (claude_hook_data["hooks"] || {}).each do |_event, entries|
     (entries || []).each do |entry|
       (entry["hooks"] || []).each do |h|
-        commands << h["command"] if h["command"]
+        claude_commands << h["command"] if h["command"]
       end
     end
   end
-  raise "no commands found in hooks.json" if commands.empty?
+  codex_commands = []
+  codex_hook_data.each do |_event, entries|
+    (entries || []).each do |entry|
+      (entry["hooks"] || []).each do |hook|
+        codex_commands << hook["command"] if hook["command"]
+      end
+    end
+  end
+  raise "no Claude commands found in hooks.json" if claude_commands.empty?
+  raise "no Codex commands found in inline hooks" if codex_commands.empty?
 
   plugin_root = "plugins/aed"
-  checked = 0
-  commands.each do |cmd|
+  checked_claude = 0
+  claude_commands.each do |cmd|
     cmd.scan(/\$\{CLAUDE_PLUGIN_ROOT\}([^"\s]*)/) do |m|
       rel = m[0]
       full = File.join(plugin_root, rel)
       raise "referenced file #{full} (from command: #{cmd}) does not exist" unless File.exist?(full)
-      checked += 1
+      checked_claude += 1
     end
   end
-  raise "no ${CLAUDE_PLUGIN_ROOT} references found to check" if checked.zero?
-  puts "hooks.json parses; #{checked} CLAUDE_PLUGIN_ROOT reference(s) resolve to existing files"
+  checked_codex = 0
+  codex_commands.each do |cmd|
+    cmd.scan(/\$\{PLUGIN_ROOT\}([^"\s]*)/) do |m|
+      rel = m[0]
+      full = File.join(plugin_root, rel)
+      raise "referenced file #{full} (from command: #{cmd}) does not exist" unless File.exist?(full)
+      checked_codex += 1
+    end
+  end
+  raise "no ${CLAUDE_PLUGIN_ROOT} references found to check" if checked_claude.zero?
+  raise "no ${PLUGIN_ROOT} references found to check" if checked_codex.zero?
+  puts "Claude and Codex hooks parse; #{checked_claude} Claude and #{checked_codex} Codex script path(s) resolve"
 rescue => e
   STDERR.puts e.message
   exit 1
@@ -100,8 +146,8 @@ end
 if [ $? -eq 0 ]; then pass V3 "$V3_MSG"; else fail V3 "$V3_MSG"; fi
 
 # ---------------------------------------------------------------------------
-# V4: each skills/*/SKILL.md exists, has YAML frontmatter with a non-empty
-# description of at most 500 characters.
+# V4: each skills/*/SKILL.md has a matching skill name and a non-empty
+# description within the shared 500-character project limit.
 # ---------------------------------------------------------------------------
 V4_MSG=$(ruby -ryaml -e '
 begin
@@ -113,6 +159,8 @@ begin
     raise "#{f}: no YAML frontmatter block" unless m
     fm = (YAML.safe_load(m[1]) rescue nil)
     raise "#{f}: frontmatter did not parse as YAML" unless fm.is_a?(Hash)
+    expected_name = File.basename(File.dirname(f))
+    raise "#{f}: frontmatter name must be #{expected_name.inspect}" unless fm["name"] == expected_name
     desc = fm["description"]
     raise "#{f}: missing description" unless desc.is_a?(String) && !desc.strip.empty?
     raise "#{f}: description exceeds 500 chars (#{desc.length})" if desc.length > 500
@@ -126,7 +174,8 @@ end
 if [ $? -eq 0 ]; then pass V4 "$V4_MSG"; else fail V4 "$V4_MSG"; fi
 
 # ---------------------------------------------------------------------------
-# V5: each commands/*.md has frontmatter with a non-empty description.
+# V5: each commands/*.md has frontmatter with a non-empty description, and
+# the shared workflow generator reports no drift between Claude and Codex.
 # ---------------------------------------------------------------------------
 V5_MSG=$(ruby -ryaml -e '
 begin
@@ -147,7 +196,17 @@ rescue => e
   exit 1
 end
 ' 2>&1)
-if [ $? -eq 0 ]; then pass V5 "$V5_MSG"; else fail V5 "$V5_MSG"; fi
+if [ $? -eq 0 ]; then
+  V5_GENERATOR_OUT=$(ruby scripts/build_plugin_workflows.rb --check 2>&1)
+  V5_GENERATOR_STATUS=$?
+  if [ $V5_GENERATOR_STATUS -eq 0 ]; then
+    pass V5 "$V5_MSG; $V5_GENERATOR_OUT"
+  else
+    fail V5 "$V5_MSG; workflow generation check failed: $V5_GENERATOR_OUT"
+  fi
+else
+  fail V5 "$V5_MSG"
+fi
 
 # ---------------------------------------------------------------------------
 # V6: linter test suite passes.

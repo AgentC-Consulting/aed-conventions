@@ -1,4 +1,5 @@
 ---
+name: planning
 description: Plan features and write pseudocode that already carries release-quality AED (Agent-Enhanced Development) names, so no renaming refactor is needed later — feature story to nouns and verbs, "When … then …" process statements, every name checked before code exists. Use when planning, designing, or writing pseudocode or a code skeleton in projects that adopt AED (AED named in CLAUDE.md or README), or when the user asks for AED planning.
 ---
 
@@ -89,13 +90,19 @@ That expanded sentence is nearly the pseudocode. That is the point.
    method names. Apply the AED naming rules — singular models, feature-namespaced
    classes, `list_of_`/`collection_of_`/`array_of_`, boolean-as-question,
    usage-phrase non-primitives.
-4. **Batch-check the names before writing anything**:
+4. **Batch-check the names before writing anything**. In Claude Code,
+   `CLAUDE_PLUGIN_ROOT` resolves the script. In Codex, find the installed copy
+   under `${CODEX_HOME:-$HOME/.codex}/plugins/cache/`:
    ```bash
-   ruby ${CLAUDE_PLUGIN_ROOT}/scripts/aed_lint.rb check-name --kind class Billing::AggregateEnterpriseCustomersUnderOneBillingEntity
-   ruby ${CLAUDE_PLUGIN_ROOT}/scripts/aed_lint.rb check-name --kind collection array_of_customer_ids_to_aggregate list_of_all_active_subscriptions
-   ruby ${CLAUDE_PLUGIN_ROOT}/scripts/aed_lint.rb check-name --kind boolean is_this_an_enterprise_customer
-   ruby ${CLAUDE_PLUGIN_ROOT}/scripts/aed_lint.rb check-name --kind attribute full_legal_entity_name payment_terms_in_number_of_days
-   ruby ${CLAUDE_PLUGIN_ROOT}/scripts/aed_lint.rb check-name --kind method attach_each_customer_to_the_enterprise_billing_entity
+   # Claude Code:
+   aed_lint_script="${CLAUDE_PLUGIN_ROOT}/scripts/aed_lint.rb"
+   # Codex (use this assignment instead):
+   # aed_lint_script="$(find "${CODEX_HOME:-$HOME/.codex}/plugins/cache" -path '*/aed/*/scripts/aed_lint.rb' -print -quit)"
+   ruby "$aed_lint_script" check-name --kind class Billing::AggregateEnterpriseCustomersUnderOneBillingEntity
+   ruby "$aed_lint_script" check-name --kind collection array_of_customer_ids_to_aggregate list_of_all_active_subscriptions
+   ruby "$aed_lint_script" check-name --kind boolean is_this_an_enterprise_customer
+   ruby "$aed_lint_script" check-name --kind attribute full_legal_entity_name payment_terms_in_number_of_days
+   ruby "$aed_lint_script" check-name --kind method attach_each_customer_to_the_enterprise_billing_entity
    ```
    `--kind` is one of `boolean | collection | attribute | class | method`. Fix
    every warn **now**, while the name exists in one place: the plan.

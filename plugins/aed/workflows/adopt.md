@@ -1,7 +1,3 @@
----
-description: "Add or update the project's AED conventions section in agent instructions"
----
-
 Add or update the project's AED conventions section in its agent instructions.
 Keep one canonical section when the project uses both Codex and Claude Code.
 

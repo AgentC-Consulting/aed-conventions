@@ -1,9 +1,3 @@
----
-description: "Run the AED naming linter on given paths or changed files and triage findings"
----
-
-Command arguments: $ARGUMENTS
-
 Run the AED naming linter on explicit paths or the project's changed source
 files, then triage its findings. This is advisory; the linter never blocks and
 neither should you.

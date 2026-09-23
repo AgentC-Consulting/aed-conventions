@@ -1,4 +1,5 @@
 ---
+name: naming
 description: Name and review code with AED (Agent-Enhanced Development) conventions from AgentC Consulting — singular models, feature-namespaced classes, statement-shaped class and method names, `first_name` not `name`, `list_of_` collections, booleans phrased as questions, snake_case files matching the class. Use when writing, naming, renaming, or reviewing classes, attributes, methods, or files in projects that adopt AED (AED named in CLAUDE.md or README), or when the user asks for AED naming.
 ---
 
@@ -109,23 +110,30 @@ expand it.
 
 ## Workflow — check names, don't guess
 
-Before introducing **any** new class, attribute, or method name:
+Before introducing **any** new class, attribute, or method name, run the
+bundled linter. Claude Code commands can use `CLAUDE_PLUGIN_ROOT`; for Codex,
+find the installed copy under `${CODEX_HOME:-$HOME/.codex}/plugins/cache/`.
 
 ```bash
-ruby ${CLAUDE_PLUGIN_ROOT}/scripts/aed_lint.rb check-name --kind boolean has_a_valid_payment_method
-ruby ${CLAUDE_PLUGIN_ROOT}/scripts/aed_lint.rb check-name --kind collection list_of_previous_orders
-ruby ${CLAUDE_PLUGIN_ROOT}/scripts/aed_lint.rb check-name --kind attribute first_name email_address
-ruby ${CLAUDE_PLUGIN_ROOT}/scripts/aed_lint.rb check-name --kind class Billing::ProcessCustomersWithExpiredPaymentMethods
-ruby ${CLAUDE_PLUGIN_ROOT}/scripts/aed_lint.rb check-name --kind method retry_customers_who_failed_payment_processing
+# Claude Code:
+aed_lint_script="${CLAUDE_PLUGIN_ROOT}/scripts/aed_lint.rb"
+# Codex (use this assignment instead):
+# aed_lint_script="$(find "${CODEX_HOME:-$HOME/.codex}/plugins/cache" -path '*/aed/*/scripts/aed_lint.rb' -print -quit)"
+ruby "$aed_lint_script" check-name --kind boolean has_a_valid_payment_method
+ruby "$aed_lint_script" check-name --kind collection list_of_previous_orders
+ruby "$aed_lint_script" check-name --kind attribute first_name email_address
+ruby "$aed_lint_script" check-name --kind class Billing::ProcessCustomersWithExpiredPaymentMethods
+ruby "$aed_lint_script" check-name --kind method retry_customers_who_failed_payment_processing
 ```
 
 `--kind` is one of `boolean | collection | attribute | class | method`. Multiple
 names can be checked in one call — batch them.
 
-After editing files, run the linter over the files you touched:
+After editing files, run the linter over the files you touched using the same
+`aed_lint_script` path resolution shown above:
 
 ```bash
-ruby ${CLAUDE_PLUGIN_ROOT}/scripts/aed_lint.rb path/to/edited_file.cr path/to/other_file.rb
+ruby "$aed_lint_script" path/to/edited_file.cr path/to/other_file.rb
 ```
 
 **Treat a warn as rename-now.** A name that survives one edit becomes a name

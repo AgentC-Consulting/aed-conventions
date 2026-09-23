@@ -1,5 +1,6 @@
 ---
-description: "Add or update the project's AED conventions section in agent instructions"
+name: adopt
+description: "Adopt AED conventions in AGENTS.md for Codex or CLAUDE.md for Claude Code, keeping one canonical section when both harnesses are used."
 ---
 
 Add or update the project's AED conventions section in its agent instructions.

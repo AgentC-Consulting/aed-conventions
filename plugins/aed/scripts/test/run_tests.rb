@@ -3,17 +3,21 @@
 
 # Test runner for aed_lint.rb.
 #
-# Ruby stdlib only, no gems, no subprocesses — the CLI is driven in-process
-# through AedLint::LintCommandLineInvocation with StringIO for stdin/stdout,
-# so exit codes, --hook stdin handling and formatting are all covered.
+# Ruby stdlib only, no gems — the CLI is driven in-process through
+# AedLint::LintCommandLineInvocation with StringIO for stdin/stdout. The Bash
+# hook fixture uses a temporary Git repo to exercise dirty-file discovery.
 #
 #   ruby plugins/aed/scripts/test/run_tests.rb
 
 require "json"
+require "fileutils"
+require "open3"
 require "stringio"
+require "tmpdir"
 require_relative "../aed_lint"
 
 FIXTURES_DIRECTORY = File.expand_path("fixtures", __dir__)
+REPOSITORY_ROOT = File.expand_path("../../../../..", FIXTURES_DIRECTORY)
 
 # Every finding the bad fixtures are expected to produce, as
 # [line, rule, severity]. Exact — an unexpected finding fails the suite too.
@@ -275,6 +279,77 @@ pathless_event = JSON.generate("tool_input" => {})
 pathless_exit_status, pathless_output, = run_the_linter_command(["--hook"], pathless_event)
 assert_equal(0, pathless_exit_status, "--hook without a file_path exits 0")
 assert_equal("", pathless_output, "--hook without a file_path prints nothing")
+
+# Codex sends patch text instead of a file_path for apply_patch calls.
+apply_patch_event = JSON.parse(File.read(fixture_path_for("apply_patch_hook.json")))
+apply_patch_event["cwd"] = REPOSITORY_ROOT
+apply_patch_exit_status, apply_patch_output, = run_the_linter_command(["--hook"], JSON.generate(apply_patch_event))
+assert_equal(0, apply_patch_exit_status, "--hook handles Codex apply_patch payloads without blocking")
+apply_patch_hook_payload = begin
+  JSON.parse(apply_patch_output)
+rescue JSON::ParserError => parse_error
+  parse_error
+end
+assert_truthy(apply_patch_hook_payload.is_a?(Hash), "Codex apply_patch hook output parses as JSON")
+if apply_patch_hook_payload.is_a?(Hash)
+  apply_patch_context = apply_patch_hook_payload.dig("hookSpecificOutput", "additionalContext").to_s
+  assert_truthy(apply_patch_context.include?("bad_naming.rb"), "Codex apply_patch path is extracted from tool_input.command")
+  assert_truthy(apply_patch_context.include?("AED-N"), "Codex apply_patch hook feedback carries naming findings")
+end
+
+# Codex Bash writes do not include file paths. The hook checks only files that
+# became Git-dirty after this session's SessionStart stamp.
+bash_hook_fixture = JSON.parse(File.read(fixture_path_for("bash_hook.json")))
+bash_session_id = "aed-bash-test-#{Process.pid}-#{Time.now.to_i}"
+temporary_bash_repository = Dir.mktmpdir("aed-lint-bash-hook-")
+temporary_bash_source_path = File.join(temporary_bash_repository, "new_process_manager.rb")
+bash_session_stamp = File.join(AedLint::HOOK_STAMP_DIRECTORY, "#{bash_session_id}.stamp")
+begin
+  _git_init_output, _git_init_error, git_init_status = Open3.capture3("git", "-C", temporary_bash_repository, "init", "-q")
+  assert_equal(true, git_init_status.success?, "temporary Bash hook repository initializes")
+
+  File.write(temporary_bash_source_path, "class Customer\nend\n")
+  _git_add_output, _git_add_error, git_add_status = Open3.capture3("git", "-C", temporary_bash_repository, "add", "new_process_manager.rb")
+  assert_equal(true, git_add_status.success?, "temporary Bash hook baseline is staged")
+  _git_commit_output, _git_commit_error, git_commit_status = Open3.capture3(
+    "git", "-C", temporary_bash_repository, "-c", "user.name=AED Test", "-c", "user.email=aed-test@example.com",
+    "commit", "--quiet", "-m", "baseline"
+  )
+  assert_equal(true, git_commit_status.success?, "temporary Bash hook baseline is committed")
+
+  session_start_event = {
+    "session_id" => bash_session_id,
+    "hook_event_name" => "SessionStart",
+    "cwd" => temporary_bash_repository
+  }
+  session_start_exit_status, session_start_output, = run_the_linter_command(["--hook"], JSON.generate(session_start_event))
+  assert_equal(0, session_start_exit_status, "--hook records a Codex SessionStart stamp")
+  assert_equal("", session_start_output, "SessionStart stamp does not print hook feedback")
+
+  sleep 0.02
+  bash_command = bash_hook_fixture.dig("tool_input", "command").to_s
+  bash_source = bash_command.split("<<'RUBY'\n", 2).last.to_s.sub(/\nRUBY\z/, "")
+  File.write(temporary_bash_source_path, bash_source)
+
+  bash_hook_fixture["session_id"] = bash_session_id
+  bash_hook_fixture["cwd"] = temporary_bash_repository
+  bash_exit_status, bash_output, = run_the_linter_command(["--hook"], JSON.generate(bash_hook_fixture))
+  assert_equal(0, bash_exit_status, "--hook handles Codex Bash payloads without blocking")
+  bash_hook_payload = begin
+    JSON.parse(bash_output)
+  rescue JSON::ParserError => parse_error
+    parse_error
+  end
+  assert_truthy(bash_hook_payload.is_a?(Hash), "Codex Bash hook output parses as JSON")
+  if bash_hook_payload.is_a?(Hash)
+    bash_context = bash_hook_payload.dig("hookSpecificOutput", "additionalContext").to_s
+    assert_truthy(bash_context.include?("new_process_manager.rb"), "Codex Bash hook finds Git-dirty source files after SessionStart")
+    assert_truthy(bash_context.include?("AED-N"), "Codex Bash hook feedback carries naming findings")
+  end
+ensure
+  FileUtils.rm_f(bash_session_stamp)
+  FileUtils.remove_entry(temporary_bash_repository) if File.directory?(temporary_bash_repository)
+end
 
 # unsupported extensions are skipped silently in normal linting too
 File.write(File.join(FIXTURES_DIRECTORY, ".unsupported_probe.txt"), "data = 1\n")

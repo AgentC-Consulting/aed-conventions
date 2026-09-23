@@ -1,7 +1,7 @@
 {
   "name": "aed",
-  "description": "AED conventions for agent-enhanced codebases: release-quality naming from the pseudocode stage onward, process managers from When-statements, and an advisory naming linter for Ruby, Crystal, and Elixir.",
-  "version": "0.1.2",
+  "description": "Agent-Enhanced Development: naming + process-manager conventions as skills, a planning-stage name checker, and an edit-time naming hook for Ruby, Crystal, and Elixir.",
+  "version": "0.2.0",
   "author": { "name": "AgentC Consulting", "url": "https://agentc.consulting" },
   "homepage": "https://github.com/AgentC-Consulting/aed-conventions",
   "repository": "https://github.com/AgentC-Consulting/aed-conventions",
