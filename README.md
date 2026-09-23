@@ -121,7 +121,7 @@ candidate is promoted.
 The AED plugin is available for both Claude Code and Codex CLI. Both installs
 provide the same naming, planning, and process-manager skills, the same three
 workflows, and the same advisory Ruby, Crystal, and Elixir naming linter.
-The plugin package is version `0.2.0`, versioned independently from the AED
+The plugin package is version `0.2.1`, versioned independently from the AED
 canon releases.
 
 Install a pinned release, never the moving `main` branch. Each plugin release
@@ -129,9 +129,9 @@ is a signed tag (`plugin-vX.Y.Z`); its release notes list the full commit hash.
 
 | Claude Code | Codex CLI |
 |---|---|
-| `/plugin marketplace add https://github.com/AgentC-Consulting/aed-conventions.git#plugin-v0.2.0`<br>`/plugin install aed@aed-conventions` | `codex plugin marketplace add AgentC-Consulting/aed-conventions --ref <commit hash from the release notes>`<br>`codex plugin add aed@aed-conventions` |
+| `/plugin marketplace add https://github.com/AgentC-Consulting/aed-conventions.git#plugin-v0.2.1`<br>`/plugin install aed@aed-conventions` | `codex plugin marketplace add AgentC-Consulting/aed-conventions --ref <commit hash from the release notes>`<br>`codex plugin add aed@aed-conventions` |
 
-Verify what you installed: `git tag -v plugin-v0.2.0` in a clone checks the
+Verify what you installed: `git tag -v plugin-v0.2.1` in a clone checks the
 signature (see [Verifying signed tags](#verifying-signed-tags)), and
 `git -C ~/.claude/plugins/marketplaces/aed-conventions rev-parse HEAD` must
 equal the commit hash in the release notes. The plugin itself fetches nothing:
@@ -142,7 +142,7 @@ install:
 
 ```
 Install the AED conventions plugin:
-1. Run: claude plugin marketplace add https://github.com/AgentC-Consulting/aed-conventions.git#plugin-v0.2.0
+1. Run: claude plugin marketplace add https://github.com/AgentC-Consulting/aed-conventions.git#plugin-v0.2.1
 2. Run: claude plugin install aed@aed-conventions
 3. Confirm the aed:naming, aed:planning, and aed:process-managers skills are available,
    then give me one example of a boolean attribute name that passes AED naming.

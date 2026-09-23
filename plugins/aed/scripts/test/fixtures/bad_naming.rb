@@ -38,3 +38,9 @@ class DoTheOrderLocking
     order_to_lock
   end
 end
+
+class ProcessOrdersForPendingPayments
+  def perform(order_record)
+    order_record
+  end
+end

@@ -34,3 +34,9 @@ class DoTheAccountLocking
     customer
   end
 end
+
+class ProcessOrdersForPendingPayments
+  def perform(order_record : Order)
+    order_record
+  end
+end

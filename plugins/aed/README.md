@@ -7,19 +7,19 @@ Crystal, and Elixir. This file is self-contained — it does not assume you have
 the rest of the [aed-conventions](https://github.com/AgentC-Consulting/aed-conventions)
 repository checked out.
 
-Plugin version: `0.2.0`.
+Plugin version: `0.2.1`.
 
 ## Install
 
 | Claude Code | Codex CLI |
 |---|---|
-| `/plugin marketplace add https://github.com/AgentC-Consulting/aed-conventions.git#plugin-v0.2.0`<br>`/plugin install aed@aed-conventions` | `codex plugin marketplace add AgentC-Consulting/aed-conventions --ref <release commit hash>`<br>`codex plugin add aed@aed-conventions` |
+| `/plugin marketplace add https://github.com/AgentC-Consulting/aed-conventions.git#plugin-v0.2.1`<br>`/plugin install aed@aed-conventions` | `codex plugin marketplace add AgentC-Consulting/aed-conventions --ref <release commit hash>`<br>`codex plugin add aed@aed-conventions` |
 
 Claude Code users can also ask Claude to install it:
 
 ```
 Install the AED conventions plugin:
-1. Run: claude plugin marketplace add https://github.com/AgentC-Consulting/aed-conventions.git#plugin-v0.2.0
+1. Run: claude plugin marketplace add https://github.com/AgentC-Consulting/aed-conventions.git#plugin-v0.2.1
 2. Run: claude plugin install aed@aed-conventions
 3. Confirm the aed:naming, aed:planning, and aed:process-managers skills are available,
    then give me one example of a boolean attribute name that passes AED naming.
@@ -65,6 +65,27 @@ ruby plugins/aed/scripts/aed_lint.rb check-name --kind boolean|collection|attrib
 # Read a PostToolUse hook payload from stdin
 ruby plugins/aed/scripts/aed_lint.rb --hook
 ```
+
+Plural data-model and data-struct names are checked in Ruby, Crystal, and
+Elixir. AED-N5 handles ORM/Ecto models. AED-N9 warns for non-ORM classes with
+data evidence such as a struct, property/field declaration, or
+`JSON::Serializable`; an unannotated primary class named `Orders` in `orders.rb`
+also qualifies. Other plural class candidates are informational. It exempts
+configuration and aggregate names such as `Settings`, `SMTPSettings`, `Options`,
+`Params`, `Metrics`, `QueryStats`,
+`Errors`, `Filters`, `Styles`, `SecurityHeaders`, `Connections`,
+`BatchOperations`, `Credentials`, and `Preferences`; all-caps acronyms such as
+`CORS` are not singularized. Singular words such as `Status`, `Address`,
+`Business`, `Analysis`, `News`, and `Series` stay unflagged.
+
+AED-N10 is conservative: it gives an informational finding for parameterized
+`process`, `retry`, `handle`, or `manage` methods, while standard protocol,
+collection, query, accessor, and framework-hook names keep their established
+spelling. AED-N11 checks explicitly namespaced primary definitions only when the
+root namespace matches the project name from `shard.yml`, `mix.exs`, a gemspec,
+or a top-level folder under `src`/`lib`; reopened dependency namespaces such as
+`HTTP::Request` are ignored. A Crystal project root segment can be omitted from
+the source path, so `Grant::Adapter::Base` in `src/adapter/base.cr` is accepted.
 
 In Claude Code's plugin command and hook context, the script path is
 `${CLAUDE_PLUGIN_ROOT}/scripts/aed_lint.rb`. Codex hook commands receive
