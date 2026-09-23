@@ -124,16 +124,25 @@ workflows, and the same advisory Ruby, Crystal, and Elixir naming linter.
 The plugin package is version `0.2.0`, versioned independently from the AED
 canon releases.
 
+Install a pinned release, never the moving `main` branch. Each plugin release
+is a signed tag (`plugin-vX.Y.Z`); its release notes list the full commit hash.
+
 | Claude Code | Codex CLI |
 |---|---|
-| `/plugin marketplace add AgentC-Consulting/aed-conventions`<br>`/plugin install aed@aed-conventions` | `codex plugin marketplace add AgentC-Consulting/aed-conventions`<br>`codex plugin add aed@aed-conventions` |
+| `/plugin marketplace add https://github.com/AgentC-Consulting/aed-conventions.git#plugin-v0.2.0`<br>`/plugin install aed@aed-conventions` | `codex plugin marketplace add AgentC-Consulting/aed-conventions --ref <commit hash from the release notes>`<br>`codex plugin add aed@aed-conventions` |
+
+Verify what you installed: `git tag -v plugin-v0.2.0` in a clone checks the
+signature (see [Verifying signed tags](#verifying-signed-tags)), and
+`git -C ~/.claude/plugins/marketplaces/aed-conventions rev-parse HEAD` must
+equal the commit hash in the release notes. The plugin itself fetches nothing:
+its scripts use only the Ruby standard library.
 
 Claude Code users can also paste this into a session and let Claude drive the
 install:
 
 ```
 Install the AED conventions plugin:
-1. Run: claude plugin marketplace add AgentC-Consulting/aed-conventions
+1. Run: claude plugin marketplace add https://github.com/AgentC-Consulting/aed-conventions.git#plugin-v0.2.0
 2. Run: claude plugin install aed@aed-conventions
 3. Confirm the aed:naming, aed:planning, and aed:process-managers skills are available,
    then give me one example of a boolean attribute name that passes AED naming.
@@ -198,7 +207,7 @@ signature verifies.
 
 ## License
 
-This repository is dual-licensed:
+This repository is licensed in parts:
 
 - **Prose and documentation** (this README, the numbered chapters,
   `CONVENTIONS.md`, `ADOPTION.md`, `llms.txt`, and everything else that isn't
@@ -207,6 +216,8 @@ This repository is dual-licensed:
 - **Code examples** under [`examples/`](examples/) are licensed under
   [MIT](LICENSE-EXAMPLES) — take them freely, with or without credit, and
   paste them into any codebase.
+- **The plugin** under [`plugins/aed/`](plugins/aed/) (skills, workflows,
+  hooks, and the linter) is licensed under [MIT](plugins/aed/LICENSE).
 
 The split exists so the rules stay attributed while the code that
 demonstrates them can flow into any project with zero friction.

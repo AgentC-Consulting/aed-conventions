@@ -5,5 +5,5 @@
   "author": { "name": "AgentC Consulting", "url": "https://agentc.consulting" },
   "homepage": "https://github.com/AgentC-Consulting/aed-conventions",
   "repository": "https://github.com/AgentC-Consulting/aed-conventions",
-  "license": "CC-BY-4.0 (docs) / MIT (code)"
+  "license": "MIT"
 }

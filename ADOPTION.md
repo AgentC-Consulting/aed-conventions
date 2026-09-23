@@ -21,7 +21,7 @@ both harness manifests, shared skills, scripts, and workflow sources:
 
 - `.agents/plugins/marketplace.json` exposes the `aed` plugin from
   `./plugins/aed` to Codex. Install with
-  `codex plugin marketplace add AgentC-Consulting/aed-conventions` then
+  `codex plugin marketplace add AgentC-Consulting/aed-conventions --ref <release commit hash>` then
   `codex plugin add aed@aed-conventions`.
 - `plugins/aed/.codex-plugin/plugin.json` points Codex at the shared skills
   and registers inline `SessionStart` and `PostToolUse` hooks.
@@ -57,7 +57,7 @@ a separate line of doctrine:
 - `.claude-plugin/marketplace.json` and
   `plugins/aed/.claude-plugin/plugin.json` — a marketplace shipping one
   plugin, `aed`. Install with
-  `/plugin marketplace add AgentC-Consulting/aed-conventions` then
+  `/plugin marketplace add https://github.com/AgentC-Consulting/aed-conventions.git#plugin-v0.2.0` then
   `/plugin install aed@aed-conventions`.
 - Three skills — `aed:naming`, `aed:planning`, `aed:process-managers` —
   that carry the naming doctrine, planning-stage discipline, and

@@ -13,13 +13,13 @@ Plugin version: `0.2.0`.
 
 | Claude Code | Codex CLI |
 |---|---|
-| `/plugin marketplace add AgentC-Consulting/aed-conventions`<br>`/plugin install aed@aed-conventions` | `codex plugin marketplace add AgentC-Consulting/aed-conventions`<br>`codex plugin add aed@aed-conventions` |
+| `/plugin marketplace add https://github.com/AgentC-Consulting/aed-conventions.git#plugin-v0.2.0`<br>`/plugin install aed@aed-conventions` | `codex plugin marketplace add AgentC-Consulting/aed-conventions --ref <release commit hash>`<br>`codex plugin add aed@aed-conventions` |
 
 Claude Code users can also ask Claude to install it:
 
 ```
 Install the AED conventions plugin:
-1. Run: claude plugin marketplace add AgentC-Consulting/aed-conventions
+1. Run: claude plugin marketplace add https://github.com/AgentC-Consulting/aed-conventions.git#plugin-v0.2.0
 2. Run: claude plugin install aed@aed-conventions
 3. Confirm the aed:naming, aed:planning, and aed:process-managers skills are available,
    then give me one example of a boolean attribute name that passes AED naming.
