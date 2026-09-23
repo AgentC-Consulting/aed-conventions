@@ -38,7 +38,7 @@ begin
   %w[name version description].each do |field|
     raise "plugin manifests disagree on #{field}" unless claude_plugin[field] == codex_plugin[field]
   end
-  raise "plugin version must be 0.2.0" unless claude_plugin["version"] == "0.2.0"
+  raise "plugin version must be 0.2.1" unless claude_plugin["version"] == "0.2.1"
   raise "plugin name must be aed" unless claude_plugin["name"] == "aed"
   raise "Codex skills path must be ./skills/" unless codex_plugin["skills"] == "./skills/"
   raise "Codex command migration must be disabled with an empty commands list" unless codex_plugin["commands"] == []

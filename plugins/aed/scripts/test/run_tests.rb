@@ -35,7 +35,8 @@ EXPECTED_FINDINGS_BY_FIXTURE = {
     [15, "AED-N8", "info"],
     [22, "AED-N1", "warn"],
     [23, "AED-N1", "info"],
-    [33, "AED-N6", "warn"]
+    [33, "AED-N6", "warn"],
+    [39, "AED-N6", "warn"]
   ],
   "bad_naming.rb" => [
     [4, "AED-N5", "warn"],
@@ -51,7 +52,8 @@ EXPECTED_FINDINGS_BY_FIXTURE = {
     [23, "AED-N1", "warn"],
     [27, "AED-N1", "warn"],
     [28, "AED-N1", "info"],
-    [37, "AED-N6", "warn"]
+    [37, "AED-N6", "warn"],
+    [43, "AED-N6", "warn"]
   ],
   "bad_naming.ex" => [
     [3, "AED-N5", "warn"],
@@ -64,16 +66,72 @@ EXPECTED_FINDINGS_BY_FIXTURE = {
     [14, "AED-N1", "warn"],
     [15, "AED-N1", "warn"],
     [16, "AED-N1", "info"]
-  ]
+  ],
+  "bad_plural_class_names.rb" => [
+    [2, "AED-N9", "warn"],
+    [5, "AED-N9", "warn"],
+    [8, "AED-N9", "warn"],
+    [11, "AED-N9", "warn"]
+  ],
+  "bad_plural_class_names.cr" => [
+    [2, "AED-N9", "warn"],
+    [5, "AED-N9", "warn"],
+    [8, "AED-N9", "warn"]
+  ],
+  "bad_plural_class_names.ex" => [
+    [2, "AED-N9", "warn"],
+    [5, "AED-N9", "warn"],
+    [8, "AED-N9", "warn"],
+    [11, "AED-N9", "warn"]
+  ],
+  "bad_method_name.rb" => [[2, "AED-N10", "warn"]],
+  "bad_method_name.cr" => [[2, "AED-N10", "warn"]],
+  "bad_method_name.ex" => [[2, "AED-N10", "warn"]],
+  "wrong_namespace/order_processor.rb" => [[1, "AED-N11", "info"]],
+  "wrong_namespace/order_processor.cr" => [[1, "AED-N11", "info"]],
+  "wrong_namespace/order_processor.ex" => [[1, "AED-N11", "info"]]
 }.freeze
 
 RULES_THAT_MUST_FIRE_BY_FIXTURE = {
   "bad_naming.cr" => %w[AED-N1 AED-N2 AED-N3 AED-N4 AED-N5 AED-N6 AED-N7 AED-N8],
   "bad_naming.rb" => %w[AED-N1 AED-N2 AED-N4 AED-N5 AED-N6 AED-N7 AED-N8],
-  "bad_naming.ex" => %w[AED-N1 AED-N2 AED-N3 AED-N4 AED-N5 AED-N7]
+  "bad_naming.ex" => %w[AED-N1 AED-N2 AED-N3 AED-N4 AED-N5 AED-N7],
+  "bad_plural_class_names.rb" => %w[AED-N9],
+  "bad_plural_class_names.cr" => %w[AED-N9],
+  "bad_plural_class_names.ex" => %w[AED-N9],
+  "bad_method_name.rb" => %w[AED-N10],
+  "bad_method_name.cr" => %w[AED-N10],
+  "bad_method_name.ex" => %w[AED-N10],
+  "wrong_namespace/order_processor.rb" => %w[AED-N11],
+  "wrong_namespace/order_processor.cr" => %w[AED-N11],
+  "wrong_namespace/order_processor.ex" => %w[AED-N11]
 }.freeze
 
-GOOD_FIXTURE_FILE_NAMES = %w[good_naming.cr good_naming.rb good_naming.ex].freeze
+GOOD_FIXTURE_FILE_NAMES = %w[
+  good_naming.cr good_naming.rb good_naming.ex
+  good_plural_class_names.cr good_plural_class_names.rb good_plural_class_names.ex
+  billing/admin/order_processor.rb billing/admin/order_processor.cr billing/admin/order_processor.ex
+].freeze
+
+SINGULAR_NAME_SUGGESTIONS_BY_FIXTURE = {
+  "bad_plural_class_names.rb" => {
+    2 => "e.g. `Order`",
+    5 => "e.g. `CustomerAddress`",
+    8 => "e.g. `Analysis`",
+    11 => "e.g. `Setting`"
+  },
+  "bad_plural_class_names.cr" => {
+    2 => "e.g. `Order`",
+    5 => "e.g. `CustomerStatus`",
+    8 => "e.g. `Person`"
+  },
+  "bad_plural_class_names.ex" => {
+    2 => "e.g. `Order`",
+    5 => "e.g. `CustomerAddress`",
+    8 => "e.g. `Setting`",
+    11 => "e.g. `Analysis`"
+  }
+}.freeze
 
 CHECK_NAME_CASES = [
   ["boolean", "has_a_valid_payment_method", true],
@@ -89,8 +147,14 @@ CHECK_NAME_CASES = [
   ["attribute", "data", false],
   ["class", "AddSubscriptionToCustomer", true],
   ["class", "LockCustomers", false],
+  ["class", "Orders", false],
+  ["class", "ProcessCustomersWithExpiredPaymentMethods", true],
+  ["class", "OrdersController", true],
   ["method", "retry_customers_who_failed_payment_processing", true],
-  ["method", "run", false]
+  ["method", "run", false],
+  ["method", "process", false],
+  ["method", "perform", true],
+  ["method", "valid?", true]
 ].freeze
 
 @count_of_assertions_that_passed = 0
@@ -152,6 +216,42 @@ EXPECTED_FINDINGS_BY_FIXTURE.each do |fixture_file_name, list_of_expected_findin
     )
   end
 end
+
+SINGULAR_NAME_SUGGESTIONS_BY_FIXTURE.each do |fixture_file_name, suggestions_by_line|
+  list_of_findings = findings_for_fixture(fixture_file_name)
+  suggestions_by_line.each do |line_number, expected_suggestion|
+    finding = list_of_findings.find do |candidate_finding|
+      candidate_finding.line == line_number && candidate_finding.rule == "AED-N9"
+    end
+    assert_equal(expected_suggestion, finding&.suggestion, "#{fixture_file_name}: AED-N9 suggests a singular class name on line #{line_number}")
+  end
+end
+
+orders_file_findings = AedLint::AnalyzeSourceFileForNamingFindings.new(
+  "orders.rb",
+  "class Orders\nend\n"
+).perform
+plural_orders_finding = orders_file_findings.find { |finding| finding.rule == "AED-N9" }
+orders_file_name_finding = orders_file_findings.find { |finding| finding.rule == "AED-N7" }
+assert_equal("e.g. `Order`", plural_orders_finding&.suggestion, "AED-N9 suggests the singular name for class Orders")
+assert_equal(
+  "rename the file to `order.rb` to match `Order`",
+  orders_file_name_finding&.suggestion,
+  "AED-N7 suggests the file name that matches AED-N9's singular class suggestion"
+)
+
+orm_orders_findings = AedLint::AnalyzeSourceFileForNamingFindings.new(
+  "orders.rb",
+  "class Orders < ApplicationRecord\nend\n"
+).perform
+orm_plural_orders_finding = orm_orders_findings.find { |finding| finding.rule == "AED-N5" }
+orm_orders_file_name_finding = orm_orders_findings.find { |finding| finding.rule == "AED-N7" }
+assert_equal("e.g. `Order`", orm_plural_orders_finding&.suggestion, "AED-N5 suggests the singular name for an ORM class")
+assert_equal(
+  "rename the file to `order.rb` to match `Order`",
+  orm_orders_file_name_finding&.suggestion,
+  "AED-N7 stays consistent with the AED-N5 ORM class suggestion"
+)
 
 # (b) the good fixtures produce zero warnings — and in fact zero findings
 GOOD_FIXTURE_FILE_NAMES.each do |fixture_file_name|
@@ -227,6 +327,19 @@ several_names_exit_status, several_names_output, = run_the_linter_command(
 )
 assert_equal(1, several_names_exit_status, "check-name exits 1 when any name needs a rename")
 assert_equal(2, several_names_output.lines.length, "check-name prints one verdict per name")
+
+plural_class_verdict_exit_status, plural_class_verdict_output, = run_the_linter_command(
+  ["check-name", "--kind", "class", "Orders"]
+)
+assert_equal(1, plural_class_verdict_exit_status, "check-name rejects a plural data class name")
+assert_truthy(plural_class_verdict_output.include?("(AED-N9)"), "check-name reports the plural data-class rule id")
+assert_truthy(plural_class_verdict_output.include?("`Order`"), "check-name suggests the singular data-class name")
+
+single_word_method_verdict_exit_status, single_word_method_verdict_output, = run_the_linter_command(
+  ["check-name", "--kind", "method", "process"]
+)
+assert_equal(1, single_word_method_verdict_exit_status, "check-name rejects a bare single-verb method name")
+assert_truthy(single_word_method_verdict_output.include?("(AED-N10)"), "check-name reports the method-phrase rule id")
 
 bad_kind_exit_status, = run_the_linter_command(["check-name", "--kind", "colour", "orders"])
 assert_equal(2, bad_kind_exit_status, "check-name with an unknown --kind is a usage error")

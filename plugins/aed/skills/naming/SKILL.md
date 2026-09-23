@@ -54,6 +54,25 @@ The payoff compounds: as files grow, verbose consistent names make completions
 General principles: avoid unnecessary jargon or slang; names that read like plain
 English are preferred.
 
+Keep the head noun of a data model or data struct singular (`Order`, not
+`Orders`). The linter checks Ruby and Crystal classes/structs and Elixir modules
+that declare `defstruct` or use `Ecto.Schema`. It leaves module-only feature
+namespaces, action-led process managers, controllers, migrations, specs, and
+tests alone. `Settings` is treated as plural and suggests `Setting`; singular
+words such as `Status`, `Address`, `Business`, `Analysis`, `News`, `Series`, and
+`Species`, along with common uncountable nouns, stay unflagged.
+
+Method names explain the action taking place. A bare `process` is too vague;
+name the object or result as well. Process-manager entry points such as
+`perform`, lifecycle methods such as `initialize`, yes/no predicates ending in
+`?`, and standard framework actions keep their established names.
+
+The linter checks that an explicitly namespaced primary definition is stored
+beneath folders named for its namespace (AED-N11), such as
+`Billing::Admin::OrderProcessor` in `billing/admin/order_processor.rb`.
+For Elixir, the top-level application module is treated as the app root; the
+check applies to feature namespaces beneath it.
+
 **Never create a whole new lexicon for your code base by applying a theme.** No
 Star Wars class names, no weather metaphors, no house vocabulary invented to feel
 clever. (A *code name* for the code base itself is entirely acceptable and

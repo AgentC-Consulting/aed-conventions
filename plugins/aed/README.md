@@ -7,19 +7,19 @@ Crystal, and Elixir. This file is self-contained — it does not assume you have
 the rest of the [aed-conventions](https://github.com/AgentC-Consulting/aed-conventions)
 repository checked out.
 
-Plugin version: `0.2.0`.
+Plugin version: `0.2.1`.
 
 ## Install
 
 | Claude Code | Codex CLI |
 |---|---|
-| `/plugin marketplace add https://github.com/AgentC-Consulting/aed-conventions.git#plugin-v0.2.0`<br>`/plugin install aed@aed-conventions` | `codex plugin marketplace add AgentC-Consulting/aed-conventions --ref <release commit hash>`<br>`codex plugin add aed@aed-conventions` |
+| `/plugin marketplace add https://github.com/AgentC-Consulting/aed-conventions.git#plugin-v0.2.1`<br>`/plugin install aed@aed-conventions` | `codex plugin marketplace add AgentC-Consulting/aed-conventions --ref <release commit hash>`<br>`codex plugin add aed@aed-conventions` |
 
 Claude Code users can also ask Claude to install it:
 
 ```
 Install the AED conventions plugin:
-1. Run: claude plugin marketplace add https://github.com/AgentC-Consulting/aed-conventions.git#plugin-v0.2.0
+1. Run: claude plugin marketplace add https://github.com/AgentC-Consulting/aed-conventions.git#plugin-v0.2.1
 2. Run: claude plugin install aed@aed-conventions
 3. Confirm the aed:naming, aed:planning, and aed:process-managers skills are available,
    then give me one example of a boolean attribute name that passes AED naming.
@@ -65,6 +65,17 @@ ruby plugins/aed/scripts/aed_lint.rb check-name --kind boolean|collection|attrib
 # Read a PostToolUse hook payload from stdin
 ruby plugins/aed/scripts/aed_lint.rb --hook
 ```
+
+Plural data-model and data-struct names are checked in Ruby, Crystal, and
+Elixir. The linter treats `Settings` as plural and suggests `Setting`; it
+preserves singular words such as `Status`, `Address`, `Business`, `Analysis`,
+`News`, and `Series`. It leaves module-only namespaces, action-led process
+managers, controllers, migrations, specs, and tests alone. A bare method such as
+`process` is also flagged because it does not say what process takes place.
+It also checks that an explicitly namespaced primary definition is stored under
+folders named for the namespace, such as `Billing::Admin::OrderProcessor` in
+`billing/admin/order_processor.rb`. In Elixir, it treats the first module segment
+as the app root and checks feature namespaces beneath it.
 
 In Claude Code's plugin command and hook context, the script path is
 `${CLAUDE_PLUGIN_ROOT}/scripts/aed_lint.rb`. Codex hook commands receive
